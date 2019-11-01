@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe.TypeTag
 import scala.util.control.NonFatal
 
-import org.apache.spark.{SPARK_VERSION, SparkConf, SparkContext, TaskContext}
+import org.apache.spark.{SPARK_VERSION, SparkConf, SparkContext, SparkException, TaskContext}
 import org.apache.spark.annotation.{DeveloperApi, Experimental, Stable, Unstable}
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.internal.Logging
@@ -44,6 +44,7 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.command.ExternalCommandExecutor
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
 import org.apache.spark.sql.internal._
+import org.apache.spark.sql.internal.SQLConf.SESSION_STATE_BUILDER_CLASS_NAME
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.streaming._
@@ -883,6 +884,16 @@ object SparkSession extends Logging {
     }
 
     /**
+     * Enables the use of provided ExternalCatalog and SessionState classes.
+     *
+     * @since 2.4.0
+     */
+    def enableProvidedCatalog(): Builder = synchronized {
+      // Assume that the classes exist in classpath.
+      config(CATALOG_IMPLEMENTATION.key, "provided")
+    }
+
+    /**
      * Inject extensions into the [[SparkSession]]. This allows a user to add Analyzer rules,
      * Optimizer rules, Planning Strategies or a customized parser.
      *
@@ -1110,9 +1121,22 @@ object SparkSession extends Logging {
     "org.apache.spark.sql.hive.HiveSessionStateBuilder"
 
   private def sessionStateClassName(conf: SparkConf): String = {
+    val builderNotSet = conf.get(SESSION_STATE_BUILDER_CLASS_NAME).isEmpty
+    val catalogProvided = conf.get(CATALOG_IMPLEMENTATION) == "provided"
+    assert(builderNotSet || catalogProvided,
+      s"""${SESSION_STATE_BUILDER_CLASS_NAME.key} set but ${CATALOG_IMPLEMENTATION.key} is set to
+         |${conf.get(CATALOG_IMPLEMENTATION)} and not 'provided'. If you did not intend to set
+         |${CATALOG_IMPLEMENTATION.key}, make sure your conf is correct and you have not called
+         |enableHiveSupport() which will revert the value to "hive" or modified the configuration
+         |in some other programmatic way.""".stripMargin)
     conf.get(CATALOG_IMPLEMENTATION) match {
       case "hive" => HIVE_SESSION_STATE_BUILDER_CLASS_NAME
       case "in-memory" => classOf[SessionStateBuilder].getCanonicalName
+      case "provided" => conf.get(SESSION_STATE_BUILDER_CLASS_NAME) match {
+        case Some(className) => className
+        case None => throw new SparkException(s"Setting '${CATALOG_IMPLEMENTATION.key}' as " +
+          s"'provided' requires '${SESSION_STATE_BUILDER_CLASS_NAME.key}' to be defined as well.")
+      }
     }
   }
 

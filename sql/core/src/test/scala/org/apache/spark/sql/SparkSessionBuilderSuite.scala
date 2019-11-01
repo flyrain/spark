@@ -17,13 +17,18 @@
 
 package org.apache.spark.sql
 
+import org.apache.hadoop.conf.Configuration
 import org.scalatest.BeforeAndAfterEach
 
 import org.apache.spark.{SparkConf, SparkContext, SparkException, SparkFunSuite}
 import org.apache.spark.internal.config.EXECUTOR_ALLOW_SPARK_CONTEXT
 import org.apache.spark.internal.config.UI.UI_ENABLED
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.catalyst.catalog._
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.internal.{BaseSessionStateBuilder, SessionState, SessionStateBuilder, SQLConf}
 import org.apache.spark.sql.internal.StaticSQLConf._
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.ThreadUtils
 
 /**
@@ -260,6 +265,34 @@ class SparkSessionBuilderSuite extends SparkFunSuite with BeforeAndAfterEach {
     }
   }
 
+  test("SPARK-17767: Spark SQL ExternalCatalog API custom implementation support") {
+    val session = SparkSession.builder()
+      .master("local")
+      .enableProvidedCatalog()
+      .config("spark.sql.externalCatalog", "org.apache.spark.sql.MyExternalCatalog")
+      .config("spark.sql.sessionStateBuilder", "org.apache.spark.sql.MySessionStateBuilder")
+      .getOrCreate()
+    assert(session.sharedState.externalCatalog.unwrapped.isInstanceOf[MyExternalCatalog])
+    assert(session.sessionState.conf.getConfString("MySessionStateBuilder") == "true")
+  }
+
+  test("SPARK-17767 - Fail on missing SessionStateBuilder") {
+    val session = SparkSession.builder()
+      .master("local")
+      .enableProvidedCatalog()
+      .getOrCreate()
+    assertThrows[SparkException](session.sharedState.externalCatalog)
+    assertThrows[SparkException](session.sessionState)
+  }
+
+  test("SPARK-17767 - Fail on unused SessionStateBuilder config") {
+    val session = SparkSession.builder()
+      .master("local")
+      .config("spark.sql.sessionStateBuilder", "org.apache.spark.sql.MySessionStateBuilder")
+      .getOrCreate()
+    assertThrows[AssertionError](session.sessionState)
+  }
+
   test("SPARK-32160: Disallow to create SparkSession in executors") {
     val session = SparkSession.builder().master("local-cluster[3, 1, 1024]").getOrCreate()
 
@@ -411,5 +444,87 @@ class SparkSessionBuilderSuite extends SparkFunSuite with BeforeAndAfterEach {
         .sharedState
     }
     assert(!logAppender.loggingEvents.exists(_.getRenderedMessage.contains(msg)))
+  }
+}
+
+class MyExternalCatalog(conf: SparkConf, hadoopConf: Configuration) extends ExternalCatalog {
+
+  override def createDatabase(dbDefinition: CatalogDatabase, ignoreIfExists: Boolean): Unit = {}
+  override def dropDatabase(db: String, ignoreIfNotExists: Boolean, cascade: Boolean): Unit = {}
+  override def alterDatabase(dbDefinition: CatalogDatabase): Unit = {}
+  override def getDatabase(db: String): CatalogDatabase = null
+  override def databaseExists(db: String): Boolean = true
+  override def listDatabases(): Seq[String] = Seq.empty
+  override def listDatabases(pattern: String): Seq[String] = Seq.empty
+  override def setCurrentDatabase(db: String): Unit = {}
+  override def createTable(tableDefinition: CatalogTable, ignoreIfExists: Boolean): Unit = {}
+  override def dropTable(db: String,
+                         table: String,
+                         ignoreIfNotExists: Boolean,
+                         purge: Boolean): Unit = {}
+  override def renameTable(db: String, oldName: String, newName: String): Unit = {}
+  override def alterTable(tableDefinition: CatalogTable): Unit = {}
+  override def alterTableDataSchema(db: String, table: String,
+                                    newDataSchema: StructType): Unit = {}
+  override def alterTableStats(db: String,
+                               table: String,
+                               stats: Option[CatalogStatistics]): Unit = {}
+  override def getTable(db: String, table: String): CatalogTable = null
+  override def getTablesByName(db: String, tables: Seq[String]): Seq[CatalogTable] = Seq.empty
+  override def tableExists(db: String, table: String): Boolean = true
+  override def listTables(db: String): Seq[String] = Seq.empty
+  override def listTables(db: String, pattern: String): Seq[String] = Seq.empty
+  override def loadTable(db: String, table: String, loadPath: String,
+                         isOverwrite: Boolean, isSrcLocal: Boolean): Unit = {}
+  override def loadPartition(db: String, table: String, loadPath: String,
+                             partition: TablePartitionSpec,
+                             isOverwrite: Boolean, inheritTableSpecs: Boolean,
+                             isSrcLocal: Boolean): Unit = {}
+  override def loadDynamicPartitions(db: String, table: String, loadPath: String,
+                                     partition: TablePartitionSpec,
+                                     replace: Boolean, numDP: Int): Unit = {}
+  override def createPartitions(db: String, table: String,
+                                parts: Seq[CatalogTablePartition],
+                                ignoreIfExists: Boolean): Unit = {}
+  override def dropPartitions(db: String, table: String, parts: Seq[TablePartitionSpec],
+                              ignoreIfNotExists: Boolean,
+                              purge: Boolean, retainData: Boolean): Unit = {}
+  override def renamePartitions(db: String, table: String, specs: Seq[TablePartitionSpec],
+                                newSpecs: Seq[TablePartitionSpec]): Unit = {}
+  override def alterPartitions(db: String, table: String,
+                               parts: Seq[CatalogTablePartition]): Unit = {}
+  override def getPartition(db: String, table: String,
+                            spec: TablePartitionSpec): CatalogTablePartition = null
+  override def getPartitionOption(db: String, table: String,
+                                  spec: TablePartitionSpec):
+  Option[CatalogTablePartition] = None
+  override def listPartitionNames(db: String, table: String,
+                                  partialSpec: Option[TablePartitionSpec]):
+  Seq[String] = Seq.empty
+  override def listPartitions(db: String, table: String,
+                              partialSpec: Option[TablePartitionSpec]):
+  Seq[CatalogTablePartition] = Seq.empty
+  override def listPartitionsByFilter(db: String, table: String,
+                                      predicates: Seq[Expression],
+                                      defaultTimeZoneId: String):
+  Seq[CatalogTablePartition] = Seq.empty
+  override def createFunction(db: String, funcDefinition: CatalogFunction): Unit = {}
+  override def dropFunction(db: String, funcName: String): Unit = {}
+  override def alterFunction(db: String, funcDefinition: CatalogFunction): Unit = {}
+  override def renameFunction(db: String, oldName: String, newName: String): Unit = {}
+  override def getFunction(db: String, funcName: String): CatalogFunction = null
+  override def functionExists(db: String, funcName: String): Boolean = true
+  override def listFunctions(db: String, pattern: String): Seq[String] = Seq.empty
+  override def listViews(db: String, pattern: String): Seq[String] = Seq.empty
+}
+
+class MySessionStateBuilder(
+    session: SparkSession,
+    parentState: Option[SessionState] = None,
+    options: Map[String, String] = Map.empty)
+  extends BaseSessionStateBuilder(session, parentState, options) {
+  override protected def newBuilder: NewBuilder = {
+    conf.setConfString("MySessionStateBuilder", "true")
+    new SessionStateBuilder(_, _, Map.empty)
   }
 }

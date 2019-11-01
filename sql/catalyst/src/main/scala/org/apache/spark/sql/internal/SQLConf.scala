@@ -3028,6 +3028,20 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val SESSION_STATE_BUILDER_CLASS_NAME = buildConf("spark.sql.sessionStateBuilder")
+    .doc("Name of the class used to configure Spark SessionState builder. The class should " +
+      "extend BaseSessionStateBuilder.")
+    .internal()
+    .stringConf
+    .createOptional
+
+  val EXTERNAL_CATALOG_CLASS_NAME = buildConf("spark.sql.externalCatalog")
+    .doc("Name of the class used to configure Spark External Catalog. The class should " +
+      "implement ExternalCatalog interface.")
+    .internal()
+    .stringConf
+    .createOptional
+
   /**
    * Holds information about keys that have been deprecated.
    *
