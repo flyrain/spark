@@ -30,7 +30,7 @@ import org.apache.spark.resource.ResourceProfile
 
 class LocalityPlacementStrategySuite extends SparkFunSuite {
 
-  test("handle large number of containers and tasks (SPARK-18750)") {
+  ignore("handle large number of containers and tasks (SPARK-18750)") {
     // Run the test in a thread with a small stack size, since the original issue
     // surfaced as a StackOverflowError.
     @volatile var error: Throwable = null
