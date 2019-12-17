@@ -208,7 +208,7 @@ function postprocessForAdditionalMetrics() {
   checkboxNode.click(function() {
       onClickAdditionalMetricsCheckbox($(this));
   });
-  var isChecked = window.localStorage.getItem("stageId-and-taskId-checked") === "true";
+  var isChecked = DB.getItem("stageId-and-taskId-checked") === "true";
   checkboxNode.prop("checked", isChecked);
   onClickAdditionalMetricsCheckbox(checkboxNode);
 }
@@ -224,5 +224,5 @@ function onClickAdditionalMetricsCheckbox(checkboxNode) {
   } else {
     additionalMetrics.hide();
   }
-  window.localStorage.setItem("stageId-and-taskId-checked", isChecked);
+  DB.setItem("stageId-and-taskId-checked", isChecked);
 }

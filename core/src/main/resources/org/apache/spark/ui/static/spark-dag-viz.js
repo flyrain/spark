@@ -87,7 +87,7 @@ function expandDagVizArrowKey(forJob) {
  * This is the narrow interface called from the Scala UI code.
  */
 function toggleDagViz(forJob) {
-  var status = window.localStorage.getItem(expandDagVizArrowKey(forJob)) == "true";
+  var status = DB.getItem(expandDagVizArrowKey(forJob)) == "true";
   status = !status;
 
   var arrowSelector = ".expand-dag-viz-arrow";
@@ -105,19 +105,19 @@ function toggleDagViz(forJob) {
     graphContainer().style("display", "none");
   }
 
-  window.localStorage.setItem(expandDagVizArrowKey(forJob), "" + status);
+  DB.setItem(expandDagVizArrowKey(forJob), "" + status);
 }
 
 $(function (){
   if ($("#stage-dag-viz").length &&
-      window.localStorage.getItem(expandDagVizArrowKey(false)) == "true") {
+      DB.getItem(expandDagVizArrowKey(false)) == "true") {
     // Set it to false so that the click function can revert it
-    window.localStorage.setItem(expandDagVizArrowKey(false), "false");
+    DB.setItem(expandDagVizArrowKey(false), "false");
     toggleDagViz(false);
   } else if ($("#job-dag-viz").length &&
-      window.localStorage.getItem(expandDagVizArrowKey(true)) == "true") {
+      DB.getItem(expandDagVizArrowKey(true)) == "true") {
     // Set it to false so that the click function can revert it
-    window.localStorage.setItem(expandDagVizArrowKey(true), "false");
+    DB.setItem(expandDagVizArrowKey(true), "false");
     toggleDagViz(true);
   }
 });
@@ -232,7 +232,7 @@ function renderDagVizForJob(svgContainer) {
       container = svgContainer
         .append("a")
         .attr("xlink:href", stageLink)
-        .attr("onclick", "window.localStorage.setItem(expandDagVizArrowKey(false), true)")
+        .attr("onclick", "DB.setItem(expandDagVizArrowKey(false), true)")
         .append("g")
         .attr("id", containerId);
     }

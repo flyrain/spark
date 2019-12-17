@@ -230,6 +230,8 @@ private[spark] object UIUtils extends Logging {
     <link rel="stylesheet" href={prependBaseUri(request, "/static/webui.css")} type="text/css"/>
     <link rel="stylesheet"
           href={prependBaseUri(request, "/static/timeline-view.css")} type="text/css"/>
+    <script src={prependBaseUri(request, "/static/memorystorage.umd-0.11.0.js")} ></script>
+    <script src={prependBaseUri(request, "/static/storage.js")} ></script>
     <script src={prependBaseUri(request, "/static/sorttable.js")} ></script>
     <script src={prependBaseUri(request, "/static/jquery-3.5.1.min.js")}></script>
     <script src={prependBaseUri(request, "/static/vis-timeline-graph2d.min.js")}></script>

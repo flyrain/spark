@@ -157,7 +157,7 @@ function createTemplateURI(appId, templateName) {
 
 function setDataTableDefaults() {
   $.extend($.fn.dataTable.defaults, {
-    stateSave: true,
+    stateSave: isLocalStorageAvailable,
     stateSaveParams: function(_, data) {
         data.search.search = "";
     },
