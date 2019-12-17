@@ -1191,6 +1191,15 @@ Apart from these, the following properties are also available, and may be useful
   <td>2.0.1</td>
 </tr>
 <tr>
+  <td><code>spark.ui.ajax.enabled</code></td>
+  <td>true</td>
+  <td>
+    Enables/Disables AJAX calls from Application's Spark UI pages (Only Executors page uses ajax calls).
+    This variable can help disable those ajax calls, and load the content during page load itself.
+    Note: This will not disable the ajax calls from the home page of history server.
+  </td>
+</tr>
+<tr>
   <td><code>spark.ui.reverseProxy</code></td>
   <td>false</td>
   <td>
