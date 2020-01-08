@@ -454,6 +454,9 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
     var driverUrl: String = null
     var executorId: String = null
     var bindAddress: String = null
+    if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).indexOf("mac") >= 0) {
+      bindAddress = Utils.localHostName()
+    }
     var hostname: String = null
     var cores: Int = 0
     var resourcesFileOpt: Option[String] = None
