@@ -632,6 +632,9 @@ class SparkContext(config: SparkConf) extends Logging {
       }
     _executorAllocationManager.foreach(_.start())
 
+    if (conf.get(SPARK_CALL_HOME_ENABLED)) {
+      setupSparkCallHomeListener()
+    }
     setupAndStartListenerBus()
     postEnvironmentUpdate()
     postApplicationStart()
@@ -2514,6 +2517,24 @@ class SparkContext(config: SparkConf) extends Logging {
 
   /** Register a new RDD, returning its RDD ID */
   private[spark] def newRddId(): Int = nextRddId.getAndIncrement()
+
+  /**
+   * Registers spark call home listener
+   */
+  private def setupSparkCallHomeListener(): Unit = {
+    try {
+      val listeners = Utils.loadExtensions(classOf[SparkListenerInterface],
+        Seq(SPARK_CALL_HOME_LISTENER_CLASS), conf)
+      listeners.foreach { listener =>
+        listenerBus.addToSharedQueue(listener)
+        logInfo(s"Registered Spark Call Home listener ${listener.getClass().getName()}")
+      }
+    } catch {
+      case e: Exception =>
+        // We don't fail the job and just log a warning.
+        log.warn("Exception when registering Spark Call Home Listener", e)
+    }
+  }
 
   /**
    * Registers listeners specified in spark.extraListeners, then starts the listener bus.
