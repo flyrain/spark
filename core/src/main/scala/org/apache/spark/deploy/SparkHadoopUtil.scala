@@ -415,7 +415,21 @@ private[spark] object SparkHadoopUtil extends Logging {
    */
   private[spark] val SPARK_HADOOP_CONF_FILE = "__spark_hadoop_conf__.xml"
 
-  def get: SparkHadoopUtil = instance
+  def get: SparkHadoopUtil = {
+    val jarvisMode = java.lang.Boolean.parseBoolean(
+      System.getProperty("INTERNAL_SPARK_JARVIS_MODE", System.getenv("INTERNAL_SPARK_JARVIS_MODE")))
+    if (jarvisMode) {
+      try {
+        Utils.classForName("org.apache.spark.integration.JarvisSparkHadoopUtil")
+          .newInstance()
+          .asInstanceOf[SparkHadoopUtil]
+      } catch {
+        case e: Exception => throw new SparkException("Unable to load JARVIS support", e)
+      }
+    } else {
+      instance
+    }
+  }
 
   /**
    * Returns a Configuration object with Spark configuration applied on top. Unlike
