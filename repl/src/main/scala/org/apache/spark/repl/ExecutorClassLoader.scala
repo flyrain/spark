@@ -64,6 +64,9 @@ class ExecutorClassLoader(
 
   private val fetchFn: (String) => InputStream = uri.getScheme() match {
     case "spark" => getClassFileInputStreamFromSparkRPC
+    case "http" | "https" | "ftp"
+        if conf.getBoolean("spark.executor.getClassFromHttpServer.enabled", false) =>
+      getClassFileInputStreamFromHttpServer
     case _ =>
       val fileSystem = FileSystem.get(uri, SparkHadoopUtil.get.newConfiguration(conf))
       getClassFileInputStreamFromFileSystem(fileSystem)
@@ -155,6 +158,41 @@ class ExecutorClassLoader(
             // scalastyle:on throwerror
         }
       }
+    }
+  }
+
+  private def getClassFileInputStreamFromHttpServer(pathInDirectory: String): InputStream = {
+    import java.net.HttpURLConnection
+    val url = if (SparkEnv.get.securityManager.isAuthenticationEnabled()) {
+      val uri = new URI(classUri + "/" + urlEncode(pathInDirectory))
+      uri.toURL
+    } else {
+      new URL(classUri + "/" + urlEncode(pathInDirectory))
+    }
+    val connection: HttpURLConnection = url.openConnection().asInstanceOf[HttpURLConnection]
+    // Set the connection timeouts (for testing purposes)
+    if (httpUrlConnectionTimeoutMillis != -1) {
+      connection.setConnectTimeout(httpUrlConnectionTimeoutMillis)
+      connection.setReadTimeout(httpUrlConnectionTimeoutMillis)
+    }
+    connection.connect()
+    try {
+      if (connection.getResponseCode != 200) {
+        // Close the error stream so that the connection is eligible for re-use
+        try {
+          connection.getErrorStream.close()
+        } catch {
+          case ioe: java.io.IOException =>
+            logError("Exception while closing error stream", ioe)
+        }
+        throw new ClassNotFoundException(s"Class file not found at URL $url")
+      } else {
+        connection.getInputStream
+      }
+    } catch {
+      case NonFatal(e) if !e.isInstanceOf[ClassNotFoundException] =>
+        connection.disconnect()
+        throw e
     }
   }
 
