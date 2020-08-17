@@ -329,7 +329,7 @@ private[spark] class ExecutorPodsAllocator(
       val executorPod = resolvedExecutorSpec.pod
       val podWithAttachedContainer = new PodBuilder(executorPod.pod)
         .editOrNewSpec()
-        .addToContainers(executorPod.container)
+        .addAllToContainers(executorPod.containers.asJava)
         .endSpec()
         .build()
       val createdExecutorPod = kubernetesClient.pods().create(podWithAttachedContainer)

@@ -62,8 +62,8 @@ abstract class PodBuilderSuite extends SparkFunSuite {
       .set(templateFileConf.key, "template-file.yaml")
     val pod = buildPod(sparkConf, client)
     verifyPod(pod)
-    assert(pod.container.getVolumeMounts.asScala.exists(_.getName == "so_long"))
-    assert(pod.container.getVolumeMounts.asScala.exists(_.getName == "so_long_two"))
+    assert(pod.containers.exists(_.getVolumeMounts.asScala.exists(_.getName == "so_long")))
+    assert(pod.containers.exists(_.getVolumeMounts.asScala.exists(_.getName == "so_long_two")))
   }
 
   test("complain about misconfigured pod template") {
@@ -111,7 +111,7 @@ abstract class PodBuilderSuite extends SparkFunSuite {
     assert(spec.getSubdomain === "subdomain")
     assert(spec.getTolerations.asScala.exists(_.getKey == "toleration-key"))
     assert(spec.getVolumes.asScala.exists(_.getName == "test-volume"))
-    val container = pod.container
+    val container = pod.containers.head
     assert(container.getName === "executor-container")
     assert(container.getArgs.contains("arg"))
     assert(container.getCommand.equals(List("command").asJava))
@@ -121,7 +121,7 @@ abstract class PodBuilderSuite extends SparkFunSuite {
     assert(container.getStdin)
     assert(container.getTerminationMessagePath === "termination-message-path")
     assert(container.getTerminationMessagePolicy === "termination-message-policy")
-    assert(pod.container.getVolumeMounts.asScala.exists(_.getName == "test-volume"))
+    assert(container.getVolumeMounts.asScala.exists(_.getName == "test-volume"))
   }
 
   private def podWithSupportedFeatures(): Pod = {
@@ -209,14 +209,14 @@ class TestStep extends KubernetesFeatureConfigStep {
         .addToVolumes(localDirVolumes: _*)
         .endSpec()
       .build()
-    val containerWithLocalDirVolumeMounts = new ContainerBuilder(pod.container)
+    val containerWithLocalDirVolumeMounts = new ContainerBuilder(pod.containers.head)
       .addNewEnv()
         .withName("CUSTOM_SPARK_LOCAL_DIRS")
         .withValue("fishyfishyfishy")
         .endEnv()
       .addToVolumeMounts(localDirVolumeMounts: _*)
       .build()
-    SparkPod(podWithLocalDirVolumes, containerWithLocalDirVolumeMounts)
+    SparkPod(podWithLocalDirVolumes, List(containerWithLocalDirVolumeMounts))
   }
 }
 
@@ -239,13 +239,13 @@ class TestStepTwo extends KubernetesFeatureConfigStep {
         .addToVolumes(localDirVolumes: _*)
         .endSpec()
       .build()
-    val containerWithLocalDirVolumeMounts = new ContainerBuilder(pod.container)
+    val containerWithLocalDirVolumeMounts = new ContainerBuilder(pod.containers.head)
       .addNewEnv()
         .withName("CUSTOM_SPARK_LOCAL_DIRS_TWO")
         .withValue("fishyfishyfishyTWO")
         .endEnv()
       .addToVolumeMounts(localDirVolumeMounts: _*)
       .build()
-    SparkPod(podWithLocalDirVolumes, containerWithLocalDirVolumeMounts)
+    SparkPod(podWithLocalDirVolumes, List(containerWithLocalDirVolumeMounts))
   }
 }

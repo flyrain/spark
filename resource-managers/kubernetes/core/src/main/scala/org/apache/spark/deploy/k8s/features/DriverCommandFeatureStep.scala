@@ -69,7 +69,7 @@ private[spark] class DriverCommandFeatureStep(conf: KubernetesDriverConf)
     val newResName = KubernetesUtils
       .renameMainAppResource(resource = res, shouldUploadLocal = false)
     val driverContainer = baseDriverContainer(pod, newResName).build()
-    SparkPod(pod.pod, driverContainer)
+    SparkPod(pod.pod, List(driverContainer))
   }
 
   // Exposed for testing purpose.
@@ -111,12 +111,12 @@ private[spark] class DriverCommandFeatureStep(conf: KubernetesDriverConf)
       .addAllToEnv(pythonEnvs.asJava)
       .build()
 
-    SparkPod(pod.pod, pythonContainer)
+    SparkPod(pod.pod, List(pythonContainer))
   }
 
   private def configureForR(pod: SparkPod, res: String): SparkPod = {
     val rContainer = baseDriverContainer(pod, res).build()
-    SparkPod(pod.pod, rContainer)
+    SparkPod(pod.pod, List(rContainer))
   }
 
   private def baseDriverContainer(pod: SparkPod, resource: String): ContainerBuilder = {
@@ -131,7 +131,8 @@ private[spark] class DriverCommandFeatureStep(conf: KubernetesDriverConf)
       proxyUserArgs = proxyUserArgs :+ "--proxy-user"
       proxyUserArgs = proxyUserArgs :+ conf.proxyUser.get
     }
-    new ContainerBuilder(pod.container)
+    // In the driver pod we don't have an ESS.
+    new ContainerBuilder(pod.containers.head)
       .addToArgs("driver")
       .addToArgs(proxyUserArgs: _*)
       .addToArgs("--properties-file", SPARK_CONF_PATH)

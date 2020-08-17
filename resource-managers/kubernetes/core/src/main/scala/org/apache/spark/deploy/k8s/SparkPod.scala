@@ -27,7 +27,7 @@ import org.apache.spark.annotation.{DeveloperApi, Unstable}
  */
 @Unstable
 @DeveloperApi
-case class SparkPod(pod: Pod, container: Container) {
+case class SparkPod(pod: Pod, containers: List[Container]) {
 
   /**
    * Convenience method to apply a series of chained transformations to a pod.
@@ -61,6 +61,6 @@ private[spark] object SparkPod {
         .withNewSpec()
         .endSpec()
         .build(),
-      new ContainerBuilder().build())
+      List(new ContainerBuilder().build()))
   }
 }
