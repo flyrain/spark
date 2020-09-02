@@ -101,6 +101,7 @@ abstract class EventLogFileWritersSuite extends SparkFunSuite with LocalSparkCon
 
   test("spark.eventLog.compression.codec overrides spark.io.compression.codec") {
     val conf = new SparkConf
+    conf.set(IO_COMPRESSION_CODEC, "lz4")
     conf.set(EVENT_LOG_COMPRESS, true)
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
 

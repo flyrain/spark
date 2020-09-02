@@ -63,6 +63,8 @@ class CoalesceShufflePartitionsSuite extends SparkFunSuite with BeforeAndAfterAl
         .setMaster("local[*]")
         .setAppName("test")
         .set(UI_ENABLED, false)
+        .set("spark.io.compression.codec", "lz4")
+        .set(SQLConf.SHUFFLE_PARTITIONS.key, "5")
         .set(SQLConf.SHUFFLE_PARTITIONS.key, "5")
         .set(SQLConf.COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key, "5")
         .set(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
