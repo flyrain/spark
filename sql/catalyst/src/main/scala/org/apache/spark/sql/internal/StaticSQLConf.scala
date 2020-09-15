@@ -203,6 +203,7 @@ object StaticSQLConf {
 
   val DEFAULT_URL_STREAM_HANDLER_FACTORY_ENABLED =
     buildStaticConf("spark.sql.defaultUrlStreamHandlerFactory.enabled")
+      .withAlternative("spark.FsUrlStreamHandlerFactory.enabled")
       .internal()
       .doc(
         "When true, register Hadoop's FsUrlStreamHandlerFactory to support " +
