@@ -16,7 +16,7 @@
 #
 ARG java_image_tag=11-jre-slim
 
-FROM openjdk:${java_image_tag}
+FROM debian:buster-slim
 
 ARG spark_uid=185
 
@@ -26,18 +26,26 @@ ARG spark_uid=185
 # distribution, the docker build command should be invoked from the top level directory
 # of the Spark distribution. E.g.:
 # docker build -t spark:latest -f kubernetes/dockerfiles/spark/Dockerfile .
+RUN apt-get update && apt-get -y install curl gnupg apt-transport-https ca-certificates
+RUN curl -k https://artifacts.apple.com/api/gpg/key/public | apt-key add -
+
+RUN grep -q "applejdk-apt-local universal release" /etc/apt/sources.list || echo 'deb https://artifacts.apple.com/applejdk-apt-local universal release' >> /etc/apt/sources.list
+
+RUN mkdir -p /usr/share/man/man1
+RUN apt-get update -o Acquire::https::artifacts.apple.com::Verify-Peer=false && apt-get -o Acquire::https::artifacts.apple.com::Verify-Peer=false -y install applejdk-11
 
 RUN set -ex && \
     sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
-    apt-get update && \
+    apt-get -o Acquire::https::artifacts.apple.com::Verify-Peer=false update && \
     ln -s /lib /lib64 && \
-    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
+    apt-get install -o Acquire::https::artifacts.apple.com::Verify-Peer=false -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     mkdir -p /opt/spark && \
     mkdir -p /opt/spark/examples && \
     mkdir -p /opt/spark/work-dir && \
     touch /opt/spark/RELEASE && \
     rm /bin/sh && \
     ln -sv /bin/bash /bin/sh && \
+    ln -s /usr/bin/java /bin/java && \
     echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su && \
     chgrp root /etc/passwd && chmod ug+rw /etc/passwd && \
     rm -rf /var/cache/apt/*

@@ -24,7 +24,7 @@ WORKDIR /
 USER 0
 
 RUN mkdir ${SPARK_HOME}/python
-RUN apt-get update && \
+RUN apt-get update -o Acquire::https::artifacts.apple.com::Verify-Peer=false && \
     apt install -y python3 python3-pip && \
     pip3 install --upgrade pip setuptools && \
     # Removed the .cache to save space
