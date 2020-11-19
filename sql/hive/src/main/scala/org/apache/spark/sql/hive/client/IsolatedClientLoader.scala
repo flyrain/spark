@@ -98,8 +98,9 @@ private[hive] object IsolatedClientLoader extends Logging {
     case "2.0" | "2.0.0" | "2.0.1" => hive.v2_0
     case "2.1" | "2.1.0" | "2.1.1" => hive.v2_1
     case "2.2" | "2.2.0" => hive.v2_2
-    case "2.3" | "2.3.0" | "2.3.1" | "2.3.2" | "2.3.3" | "2.3.4" | "2.3.5" | "2.3.6" | "2.3.7" =>
-      hive.v2_3
+    case "2.3" | "2.3.0" | "2.3.1" | "2.3.2" | "2.3.3" | "2.3.4" | "2.3.5" | "2.3.6" |
+         "2.3.7" => hive.v2_3
+    case "2.3.8.1-apple" => hive.v2_3_8
     case "3.0" | "3.0.0" => hive.v3_0
     case "3.1" | "3.1.0" | "3.1.1" | "3.1.2" => hive.v3_1
     case version =>
@@ -112,11 +113,18 @@ private[hive] object IsolatedClientLoader extends Logging {
       hadoopVersion: String,
       ivyPath: Option[String],
       remoteRepos: String): Seq[URL] = {
-    val hiveArtifacts = version.extraDeps ++
-      Seq("hive-metastore", "hive-exec", "hive-common", "hive-serde")
-        .map(a => s"org.apache.hive:$a:${version.fullVersion}") ++
-      Seq("com.google.guava:guava:14.0.1",
-        s"org.apache.hadoop:hadoop-client:$hadoopVersion")
+    val hiveArtifacts = if (version.fullVersion != "2.3.8.1-apple")  {
+      version.extraDeps ++
+        Seq("hive-metastore", "hive-exec", "hive-common", "hive-serde")
+          .map(a => s"org.apache.hive:$a:${version.fullVersion}") ++
+        Seq("com.google.guava:guava:14.0.1",
+          s"org.apache.hadoop:hadoop-client:$hadoopVersion")
+    } else {
+      version.extraDeps ++
+        Seq("hive-metastore", "hive-exec", "hive-common", "hive-serde")
+          .map(a => s"org.apache.hive:$a:${version.fullVersion}") ++
+        Seq(s"org.apache.hadoop:hadoop-client:$hadoopVersion")
+    }
 
     val classpath = quietly {
       SparkSubmitUtils.resolveMavenCoordinates(

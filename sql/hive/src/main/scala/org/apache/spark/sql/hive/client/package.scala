@@ -24,9 +24,8 @@ package object client {
       val extraDeps: Seq[String] = Nil,
       val exclusions: Seq[String] = Nil) extends Ordered[HiveVersion] {
     override def compare(that: HiveVersion): Int = {
-      val thisVersionParts = fullVersion.split('.').map(_.toInt)
-      val thatVersionParts = that.fullVersion.split('.').map(_.toInt)
-      assert(thisVersionParts.length == thatVersionParts.length)
+      val thisVersionParts = fullVersion.replace("-apple", "").split('.').map(_.toInt)
+      val thatVersionParts = that.fullVersion.replace("-apple", "").split('.').map(_.toInt)
       thisVersionParts.zip(thatVersionParts).foreach { case (l, r) =>
         val candidate = l - r
         if (candidate != 0) {
@@ -104,8 +103,15 @@ package object client {
     // For spark, only VersionsSuite currently creates a hive materialized view for testing.
     case object v2_3 extends HiveVersion("2.3.7",
       exclusions = Seq("org.apache.calcite:calcite-druid",
-        "org.apache.calcite.avatica:avatica",
         "org.apache.curator:*",
+        "org.pentaho:pentaho-aggdesigner-algorithm"))
+
+    // Hive 2.3.8 shades guava and includes calcite:* and avatica:avatica.
+    case object v2_3_8 extends HiveVersion("2.3.8.1-apple",
+      extraDeps = Seq("com.fasterxml.jackson.core:jackson-annotations:2.7.9"),
+      exclusions = Seq("org.apache.curator:*",
+        "com.fasterxml.jackson.core:*",
+        "com.google.guava:guava",
         "org.pentaho:pentaho-aggdesigner-algorithm"))
 
     // Since Hive 3.0, HookUtils uses org.apache.logging.log4j.util.Strings
@@ -114,7 +120,6 @@ package object client {
       extraDeps = Seq("org.apache.logging.log4j:log4j-api:2.10.0",
         "org.apache.derby:derby:10.14.1.0"),
       exclusions = Seq("org.apache.calcite:calcite-druid",
-        "org.apache.calcite.avatica:avatica",
         "org.apache.curator:*",
         "org.pentaho:pentaho-aggdesigner-algorithm"))
 
@@ -124,12 +129,11 @@ package object client {
       extraDeps = Seq("org.apache.logging.log4j:log4j-api:2.10.0",
         "org.apache.derby:derby:10.14.1.0"),
       exclusions = Seq("org.apache.calcite:calcite-druid",
-        "org.apache.calcite.avatica:avatica",
         "org.apache.curator:*",
         "org.pentaho:pentaho-aggdesigner-algorithm"))
 
     val allSupportedHiveVersions =
-      Set(v12, v13, v14, v1_0, v1_1, v1_2, v2_0, v2_1, v2_2, v2_3, v3_0, v3_1)
+      Set(v12, v13, v14, v1_0, v1_1, v1_2, v2_0, v2_1, v2_2, v2_3, v2_3_8, v3_0, v3_1)
   }
   // scalastyle:on
 

@@ -31,7 +31,7 @@ import org.apache.spark.tags.{ExtendedHiveTest, SlowHiveTest}
 import org.apache.spark.util.Utils
 
 /**
- * A separate set of DDL tests that uses Hive 2.1 libraries, which behave a little differently
+ * A separate set of DDL tests that uses Hive 2.3.8 libraries, which behave a little differently
  * from the built-in ones.
  */
 @SlowHiveTest
@@ -49,7 +49,7 @@ class Hive_2_1_DDLSuite extends SparkFunSuite with TestHiveSingleton with Before
       .set(SparkLauncher.SPARK_MASTER, "local")
       .set(WAREHOUSE_PATH.key, warehouse.toURI().toString())
       .set(CATALOG_IMPLEMENTATION.key, "hive")
-      .set(HiveUtils.HIVE_METASTORE_VERSION.key, "2.1")
+      .set(HiveUtils.HIVE_METASTORE_VERSION.key, "2.3.8.1-apple")
       .set(HiveUtils.HIVE_METASTORE_JARS.key, "maven")
 
     val hadoopConf = new Configuration()
