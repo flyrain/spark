@@ -27,7 +27,7 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.catalyst.expressions.aggregate.{Complete, Partial}
 import org.apache.spark.sql.catalyst.optimizer.{ConstantFolding, ConvertToLocalRelation, NestedColumnAliasingSuite, ReorderAssociativeOperator}
-import org.apache.spark.sql.catalyst.plans.logical.Project
+import org.apache.spark.sql.catalyst.plans.logical.{Project, RepartitionByExpression}
 import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
 import org.apache.spark.sql.execution.aggregate.{HashAggregateExec, ObjectHashAggregateExec, SortAggregateExec}
@@ -3923,6 +3923,19 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         }
         assert(e2.message.contains("Not allowed to create a permanent view " +
           s"`default`.`$testViewName` by referencing a temporary function `$tempFuncName`"))
+      }
+    }
+  }
+
+  test("limit partition num to 1 when distributing by foldable expressions") {
+    withSQLConf((SQLConf.SHUFFLE_PARTITIONS.key, "5")) {
+      Seq(1, "1, 2", null, "version()").foreach { expr =>
+        val plan = sql(s"select * from values (1), (2), (3) t(a) distribute by $expr")
+          .queryExecution.optimizedPlan
+        val res = plan.collect {
+          case r: RepartitionByExpression if r.numPartitions == 1 => true
+        }
+        assert(res.nonEmpty)
       }
     }
   }
