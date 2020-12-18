@@ -26,17 +26,21 @@ import javax.servlet.http.HttpServletRequest
 import scala.collection.mutable.{HashMap, HashSet}
 import scala.xml.{Node, Unparsed}
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.text.StringEscapeUtils
 
+import org.apache.spark.SparkException
 import org.apache.spark.internal.config.UI._
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.status._
-import org.apache.spark.status.api.v1._
+import org.apache.spark.status.api.v1.{TaskMetricDistributions, _}
 import org.apache.spark.ui._
 import org.apache.spark.util.Utils
 
 /** Page showing statistics and task list for a given stage */
-private[ui] class StagePage(parent: StagesTab, store: AppStatusStore) extends WebUIPage("stage") {
+private[ui] class StagePage(parent: StagesTab, store: AppStatusStore, ajaxEnabled: Boolean)
+  extends WebUIPage("stage") {
   import ApiHelper._
 
   private val TIMELINE_LEGEND = {
@@ -79,6 +83,37 @@ private[ui] class StagePage(parent: StagesTab, store: AppStatusStore) extends We
       }
     }.toSeq
     localityNamesAndCounts.sorted.mkString("; ")
+  }
+
+  private def executorList(): Seq[ExecutorSummary] = {
+    store.executorList(false)
+  }
+
+  private def taskMetricsList(stageId: Int,
+                              stageAttemptId: Int): TaskMetricDistributions = {
+    val quantiles = (0d to 1d by 0.25).toArray
+
+    store.taskSummary(stageId, stageAttemptId, quantiles).getOrElse(
+      throw new SparkException(s"No tasks reported metrics for $stageId / $stageAttemptId yet."))
+  }
+
+  private def stageAttemptData(stageId: Int,
+                               stageAttemptId: Int): StageData = {
+    store.stageAttempt(stageId, stageAttemptId, true)._1
+  }
+
+  private def activeTaskTable(stageData: StageData): Seq[TaskData] = {
+    val totalRecords = stageData.numCompleteTasks + stageData.numActiveTasks +
+      stageData.numKilledTasks + stageData.numFailedTasks
+    getTaskData(stageData.stageId, stageData.attemptId, totalRecords)
+  }
+
+  def getTaskData(
+      stageId: Int,
+      stageAttemptId: Int,
+      totalRecords: Int): Seq[TaskData] = {
+    store.taskList(stageId, stageAttemptId, 0, totalRecords,
+      indexName("Index"), true)
   }
 
   def render(request: HttpServletRequest): Seq[Node] = {
@@ -223,6 +258,26 @@ private[ui] class StagePage(parent: StagesTab, store: AppStatusStore) extends We
         null
     }
 
+    lazy val preLoadAppId = store.applicationInfo().id
+    lazy val taskMetricsData = taskMetricsList(stageId, stageAttemptId)
+    lazy val taskData = mapper.writeValueAsString(taskMetricsData)
+    lazy val currentAttemptData: StageData = stageAttemptData(stageId, stageAttemptId)
+    lazy val stageDataJSON = mapper.writeValueAsString(currentAttemptData)
+    lazy val activeTaskData = activeTaskTable(currentAttemptData)
+    lazy val activeTaskDataJSON = mapper.writeValueAsString(activeTaskData)
+    lazy val executorsJSON = mapper.writeValueAsString(executorList())
+
+    def preLoadedDataScript: Seq[Node] = {
+      <script>
+        {Unparsed {
+        "var preLoadedAppId='" + preLoadAppId + "';" +
+        "var preLoadedTaskMetricsJSON=String.raw`" +taskData + "`;" +
+        "var preLoadedStageDataJSON=String.raw`" + stageDataJSON + "`;" +
+        "var preLoadedActiveTaskTable=String.raw`" + activeTaskDataJSON + "`;" +
+        "var preLoadedExecutorSummaryDataJSON=String.raw`" + executorsJSON + "`;"
+      }}
+      </script>
+    }
     val content =
       summary ++
       dagViz ++ <div id="showAdditionalMetrics"></div> ++
@@ -236,13 +291,21 @@ private[ui] class StagePage(parent: StagesTab, store: AppStatusStore) extends We
         eventTimelineTaskPage, eventTimelineTaskPageSize, eventTimelineTotalPages, stageId,
         stageAttemptId, totalTasks) ++
         <div id="parent-container">
-          <script src={UIUtils.prependBaseUri(request, "/static/utils.js")}></script>
-          <script src={UIUtils.prependBaseUri(request, "/static/stagepage.js")}></script>
+          {
+            <script src={UIUtils.prependBaseUri(request, "/static/utils.js")}></script> ++
+            <script src={UIUtils.prependBaseUri(request, "/static/stagepage.js")}></script> ++
+            <script src={UIUtils.prependBaseUri(request,
+              "/static/stagespage-template.js")}></script> ++
+            {if (!ajaxEnabled) preLoadedDataScript else Seq.empty} ++
+            <script>setAjaxEnabled({ajaxEnabled})</script>
+          }
         </div>
         UIUtils.headerSparkPage(request, stageHeader, content, parent, showVisualization = true,
           useDataTables = true)
 
   }
+
+  private lazy val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   def makeTimeline(
       tasks: Seq[TaskData],

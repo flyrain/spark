@@ -166,11 +166,19 @@ function setDataTableDefaults() {
   });
 }
 
+function isString(o) {
+    return typeof o == "string" || (typeof o == "object" && o.constructor === String);
+}
+
 function formatDate(date) {
   if (date <= 0) return "-";
   else {
-     var dt = new Date(date.replace("GMT", "Z"));
-     return formatDateString(dt);
+     if (isString(date)) {
+         var dt = new Date(date.replace("GMT", "Z"));
+         return formatDateString(dt);
+     } else {
+         return formatTimeMillis(date);
+     }
   }
 }
 

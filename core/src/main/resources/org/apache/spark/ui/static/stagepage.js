@@ -16,6 +16,7 @@
  */
 
 var shouldBlockUI = true;
+var ajaxEnabled = false;
 
 $(document).ajaxStop(function () {
     if (shouldBlockUI) {
@@ -45,6 +46,14 @@ $.extend( $.fn.dataTable.ext.type.order, {
         return ((a < b) ? 1 : ((a > b) ? -1 : 0));
     }
 } );
+
+function setAjaxEnabled(val) {
+    ajaxEnabled = val;
+}
+
+function getAjaxEnabled() {
+    return ajaxEnabled;
+}
 
 // This function will only parse the URL under certain format
 // e.g. (history) https://domain:50509/history/application_1536254569791_3806251/1/stages/stage/?id=4&attempt=1
@@ -293,6 +302,9 @@ var taskSummaryMetricsTableCurrentStateArray = [];
 var taskSummaryMetricsDataTable;
 var optionalColumns = [11, 12, 13, 14, 15, 16, 17, 21];
 var taskTableSelector;
+var appId;
+var endpoint;
+var stageAttemptId;
 
 var executorOptionalColumns = [15, 16, 17, 18];
 var executorSummaryTableSelector;
@@ -300,91 +312,340 @@ var executorSummaryTableSelector;
 $(document).ready(function () {
     setDataTableDefaults();
 
-    $("#showAdditionalMetrics").append(
-        "<div><a id='additionalMetrics' class='collapse-table'>" +
-        "<span class='expand-input-rate-arrow arrow-closed' id='arrowtoggle1'></span>" +
-        " Show Additional Metrics" +
-        "</a></div>" +
-        "<div class='container-fluid-div ml-4 d-none' id='toggle-metrics'>" +
-        "<div id='select_all' class='select-all-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-0' data-column='0'> Select All</div>" +
-        "<div id='scheduler_delay' class='scheduler-delay-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-11' data-column='11' data-metrics-type='task'> Scheduler Delay</div>" +
-        "<div id='task_deserialization_time' class='task-deserialization-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-12' data-column='12' data-metrics-type='task'> Task Deserialization Time</div>" +
-        "<div id='shuffle_read_blocked_time' class='shuffle-read-blocked-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-13' data-column='13' data-metrics-type='task'> Shuffle Read Blocked Time</div>" +
-        "<div id='shuffle_remote_reads' class='shuffle-remote-reads-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-14' data-column='14' data-metrics-type='task'> Shuffle Remote Reads</div>" +
-        "<div id='shuffle_write_time' class='shuffle-write-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-21' data-column='21' data-metrics-type='task'> Shuffle Write Time</div>" +
-        "<div id='result_serialization_time' class='result-serialization-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-15' data-column='15' data-metrics-type='task'> Result Serialization Time</div>" +
-        "<div id='getting_result_time' class='getting-result-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-16' data-column='16' data-metrics-type='task'> Getting Result Time</div>" +
-        "<div id='peak_execution_memory' class='peak-execution-memory-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-17' data-column='17' data-metrics-type='task'> Peak Execution Memory</div>" +
-        "<div id='executor_jvm_on_off_heap_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-15'  data-column='15' data-metrics-type='executor'> Peak JVM Memory OnHeap / OffHeap</div>" +
-        "<div id='executor_on_off_heap_execution_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-16' data-column='16' data-metrics-type='executor'> Peak Execution Memory OnHeap / OffHeap</div>" +
-        "<div id='executor_on_off_heap_storage_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-17' data-column='17' data-metrics-type='executor'> Peak Storage Memory OnHeap / OffHeap</div>" +
-        "<div id='executor_direct_mapped_pool_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-18' data-column='18' data-metrics-type='executor'> Peak Pool Memory Direct / Mapped</div>" +
-        "</div>");
+        // Intentionally add 4 more spaces for those function
+        function printExecutorSummaryTable(executorSummaryDataJSON, stageDataJSON, stageExecutorSummaryInfoKeys, dataToShow) {
+            var executorDetailsMap = {};
+            executorSummaryDataJSON.forEach(function (executorDetail) {
+                executorDetailsMap[executorDetail.id] = executorDetail;
+            });
+            var executorSummaryTable = [];
+            stageExecutorSummaryInfoKeys.forEach(function (columnKeyIndex) {
+                var executorSummary = stageDataJSON.executorSummary[columnKeyIndex];
+                var executorDetail = executorDetailsMap[columnKeyIndex.toString()];
+                executorSummary.id = columnKeyIndex;
+                executorSummary.executorLogs = {};
+                executorSummary.hostPort = "CANNOT FIND ADDRESS";
 
-    $('#scheduler_delay').attr("data-toggle", "tooltip")
-        .attr("data-placement", "top")
-        .attr("title", "Scheduler delay includes time to ship the task from the scheduler to the executor, and time to send " +
-            "the task result from the executor to the scheduler. If scheduler delay is large, consider decreasing the size of tasks or decreasing the size of task results.");
-    $('#task_deserialization_time').attr("data-toggle", "tooltip")
-        .attr("data-placement", "top")
-        .attr("title", "Time spent deserializing the task closure on the executor, including the time to read the broadcasted task.");
-    $('#shuffle_read_blocked_time').attr("data-toggle", "tooltip")
-        .attr("data-placement", "top")
-        .attr("title", "Time that the task spent blocked waiting for shuffle data to be read from remote machines.");
-    $('#shuffle_remote_reads').attr("data-toggle", "tooltip")
-        .attr("data-placement", "top")
-        .attr("title", "Total shuffle bytes read from remote executors. This is a subset of the shuffle read bytes; the remaining shuffle data is read locally. ");
-    $('#shuffle_write_time').attr("data-toggle", "tooltip")
-        .attr("data-placement", "top")
-        .attr("title", "Time that the task spent writing shuffle data.");
-    $('#result_serialization_time').attr("data-toggle", "tooltip")
-            .attr("data-placement", "top")
-            .attr("title", "Time spent serializing the task result on the executor before sending it back to the driver.");
-    $('#getting_result_time').attr("data-toggle", "tooltip")
-            .attr("data-placement", "top")
-            .attr("title", "Time that the driver spends fetching task results from workers. If this is large, consider decreasing the amount of data returned from each task.");
-    $('#peak_execution_memory').attr("data-toggle", "tooltip")
-            .attr("data-placement", "top")
-            .attr("title", "Execution memory refers to the memory used by internal data structures created during " +
-                "shuffles, aggregations and joins when Tungsten is enabled. The value of this accumulator " +
-                "should be approximately the sum of the peak sizes across all such data structures created " +
-                "in this task. For SQL jobs, this only tracks all unsafe operators, broadcast joins, and " +
-                "external sort.");
-    $('[data-toggle="tooltip"]').tooltip();
-    var tasksSummary = $("#parent-container");
-    getStandAloneAppId(function (appId) {
-        // rendering the UI page
-        $.get(createTemplateURI(appId, "stagespage"), function(template) {
-          tasksSummary.append(Mustache.render($(template).filter("#stages-summary-template").html()));
+                if (executorDetail) {
+                    if (executorDetail["executorLogs"]) {
+                        stageDataJSON.executorSummary[columnKeyIndex].executorLogs =
+                            executorDetail["executorLogs"];
+                    }
+                    if (executorDetail["hostPort"]) {
+                        stageDataJSON.executorSummary[columnKeyIndex].hostPort =
+                            executorDetail["hostPort"];
+                    }
+                }
+                executorSummaryTable.push(stageDataJSON.executorSummary[columnKeyIndex]);
+            });
+            // building task aggregated metrics by executor table
+            var executorSummaryConf = {
+                "data": executorSummaryTable,
+                "columns": [
+                    {data : "id"},
+                    {data : "executorLogs", render: formatLogsCells},
+                    {data : "hostPort"},
+                    {
+                        data : function (row, type) {
+                            return type === 'display' ? formatDuration(row.taskTime) : row.taskTime;
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            var totaltasks = row.succeededTasks + row.failedTasks + row.killedTasks;
+                            return type === 'display' ? totaltasks : totaltasks.toString();
+                        }
+                    },
+                    {data : "failedTasks"},
+                    {data : "killedTasks"},
+                    {data : "succeededTasks"},
+                    {data : "isExcludedForStage"},
+                    {
+                        data : function (row, type) {
+                            return row.inputRecords != 0 ? formatBytes(row.inputBytes, type) + " / " + row.inputRecords : "";
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            return row.outputRecords != 0 ? formatBytes(row.outputBytes, type) + " / " + row.outputRecords : "";
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            return row.shuffleReadRecords != 0 ? formatBytes(row.shuffleRead, type) + " / " + row.shuffleReadRecords : "";
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            return row.shuffleWriteRecords != 0 ? formatBytes(row.shuffleWrite, type) + " / " + row.shuffleWriteRecords : "";
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            return typeof row.memoryBytesSpilled != 'undefined' ? formatBytes(row.memoryBytesSpilled, type) : "";
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            return typeof row.diskBytesSpilled != 'undefined' ? formatBytes(row.diskBytesSpilled, type) : "";
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            var peakMemoryMetrics = row.peakMemoryMetrics;
+                            if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (type !== 'display')
+                                    return peakMemoryMetrics.JVMHeapMemory;
+                                else
+                                    return (formatBytes(peakMemoryMetrics.JVMHeapMemory, type) + ' / ' +
+                                        formatBytes(peakMemoryMetrics.JVMOffHeapMemory, type));
+                            } else {
+                                if (type !== 'display') {
+                                    return 0;
+                                } else {
+                                    return '0.0 B / 0.0 B';
+                                }
+                            }
 
-          $("#additionalMetrics").click(function(){
-              $("#arrowtoggle1").toggleClass("arrow-open arrow-closed");
-              $("#toggle-metrics").toggleClass("d-none");
-              if (DB) {
-                  DB.setItem("arrowtoggle1class", $("#arrowtoggle1").attr('class'));
-              }
-          });
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            var peakMemoryMetrics = row.peakMemoryMetrics
+                            if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (type !== 'display')
+                                    return peakMemoryMetrics.OnHeapExecutionMemory;
+                                else
+                                    return (formatBytes(peakMemoryMetrics.OnHeapExecutionMemory, type) + ' / ' +
+                                        formatBytes(peakMemoryMetrics.OffHeapExecutionMemory, type));
+                            } else {
+                                if (type !== 'display') {
+                                    return 0;
+                                } else {
+                                    return '0.0 B / 0.0 B';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            var peakMemoryMetrics = row.peakMemoryMetrics
+                            if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (type !== 'display')
+                                    return peakMemoryMetrics.OnHeapStorageMemory;
+                                else
+                                    return (formatBytes(peakMemoryMetrics.OnHeapStorageMemory, type) + ' / ' +
+                                        formatBytes(peakMemoryMetrics.OffHeapStorageMemory, type));
+                            } else {
+                                if (type !== 'display') {
+                                    return 0;
+                                } else {
+                                    return '0.0 B / 0.0 B';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        data : function (row, type) {
+                            var peakMemoryMetrics = row.peakMemoryMetrics
+                            if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (type !== 'display')
+                                    return peakMemoryMetrics.DirectPoolMemory;
+                                else
+                                    return (formatBytes(peakMemoryMetrics.DirectPoolMemory, type) + ' / ' +
+                                        formatBytes(peakMemoryMetrics.MappedPoolMemory, type));
+                            } else {
+                                if (type !== 'display') {
+                                    return 0;
+                                } else {
+                                    return '0.0 B / 0.0 B';
+                                }
+                            }
+                        }
+                    }
+                ],
+                "columnDefs": [
+                    { "visible": false, "targets": 15 },
+                    { "visible": false, "targets": 16 },
+                    { "visible": false, "targets": 17 },
+                    { "visible": false, "targets": 18 }
+                ],
+                "deferRender": true,
+                "order": [[0, "asc"]],
+                "bAutoWidth": false,
+                "oLanguage": {
+                    "sEmptyTable": "No data to show yet"
+                }
+            };
+            executorSummaryTableSelector =
+                $("#summary-executor-table").DataTable(executorSummaryConf);
+            $('#parent-container [data-toggle="tooltip"]').tooltip();
 
-          $("#aggregatedMetrics").click(function(){
-              $("#arrowtoggle2").toggleClass("arrow-open arrow-closed");
-              $("#toggle-aggregatedMetrics").toggleClass("d-none");
-              if (DB) {
-                  DB.setItem("arrowtoggle2class", $("#arrowtoggle2").attr('class'));
-              }
-          });
+            executorSummaryTableSelector.column(9).visible(dataToShow.showInputData);
+            if (dataToShow.showInputData) {
+                $('#executor-summary-input').attr("data-toggle", "tooltip")
+                    .attr("data-placement", "top")
+                    .attr("title", "Bytes and records read from Hadoop or from Spark storage.");
+                $('#executor-summary-input').tooltip(true);
+            }
+            executorSummaryTableSelector.column(10).visible(dataToShow.showOutputData);
+            if (dataToShow.showOutputData) {
+                $('#executor-summary-output').attr("data-toggle", "tooltip")
+                    .attr("data-placement", "top")
+                    .attr("title", "Bytes and records written to Hadoop.");
+                $('#executor-summary-output').tooltip(true);
+            }
+            executorSummaryTableSelector.column(11).visible(dataToShow.showShuffleReadData);
+            if (dataToShow.showShuffleReadData) {
+                $('#executor-summary-shuffle-read').attr("data-toggle", "tooltip")
+                    .attr("data-placement", "top")
+                    .attr("title", "Total shuffle bytes and records read (includes both data read locally and data read from remote executors).");
+                $('#executor-summary-shuffle-read').tooltip(true);
+            }
+            executorSummaryTableSelector.column(12).visible(dataToShow.showShuffleWriteData);
+            if (dataToShow.showShuffleWriteData) {
+                $('#executor-summary-shuffle-write').attr("data-toggle", "tooltip")
+                    .attr("data-placement", "top")
+                    .attr("title", "Bytes and records written to disk in order to be read by a shuffle in a future stage.");
+                $('#executor-summary-shuffle-write').tooltip(true);
+            }
+            executorSummaryTableSelector.column(13).visible(dataToShow.showBytesSpilledData);
+            executorSummaryTableSelector.column(14).visible(dataToShow.showBytesSpilledData);
+        }
 
-        var endPoint = stageEndPoint(appId);
-        var stageAttemptId = getStageAttemptId();
-        $.getJSON(endPoint + "/" + stageAttemptId, function(response, status, jqXHR) {
+        function printTaskMetricsTable(taskMetricsJSON, dataToShow) {
+            var taskMetricKeys = Object.keys(taskMetricsJSON);
+            taskMetricKeys.forEach(function (columnKey) {
+                switch(columnKey) {
+                    case "shuffleReadMetrics":
+                        var row1 = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 3);
+                        var row2 = createRowMetadataForColumn(
+                            "shuffleReadBlockedTime", taskMetricsJSON[columnKey], 13);
+                        var row3 = createRowMetadataForColumn(
+                            "shuffleRemoteReads", taskMetricsJSON[columnKey], 14);
+                        if (dataToShow.showShuffleReadData) {
+                            taskSummaryMetricsTableArray.push(row1);
+                            taskSummaryMetricsTableArray.push(row2);
+                            taskSummaryMetricsTableArray.push(row3);
+                        }
+                        break;
 
-            var responseBody = response;
+                    case "schedulerDelay":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 11);
+                        taskSummaryMetricsTableArray.push(row);
+                        break;
+
+                    case "executorDeserializeTime":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 12);
+                        taskSummaryMetricsTableArray.push(row);
+                        break;
+
+                    case "resultSerializationTime":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 15);
+                        taskSummaryMetricsTableArray.push(row);
+                        break;
+
+                    case "gettingResultTime":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 16);
+                        taskSummaryMetricsTableArray.push(row);
+                        break;
+
+                    case "peakExecutionMemory":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 17);
+                        taskSummaryMetricsTableArray.push(row);
+                        break;
+
+                    case "inputMetrics":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 1);
+                        if (dataToShow.showInputData) {
+                            taskSummaryMetricsTableArray.push(row);
+                        }
+                        break;
+
+                    case "outputMetrics":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 2);
+                        if (dataToShow.showOutputData) {
+                            taskSummaryMetricsTableArray.push(row);
+                        }
+                        break;
+
+                    case "shuffleWriteMetrics":
+                        var row1 = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 4);
+                        var row2 = createRowMetadataForColumn(
+                            "shuffleWriteTime", taskMetricsJSON[columnKey], 21);
+                        if (dataToShow.showShuffleWriteData) {
+                            taskSummaryMetricsTableArray.push(row1);
+                            taskSummaryMetricsTableArray.push(row2);
+                        }
+                        break;
+
+                    case "diskBytesSpilled":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 5);
+                        if (dataToShow.showBytesSpilledData) {
+                            taskSummaryMetricsTableArray.push(row);
+                        }
+                        break;
+
+                    case "memoryBytesSpilled":
+                        var row = createRowMetadataForColumn(
+                            columnKey, taskMetricsJSON[columnKey], 6);
+                        if (dataToShow.showBytesSpilledData) {
+                            taskSummaryMetricsTableArray.push(row);
+                        }
+                        break;
+
+                    default:
+                        if (getColumnNameForTaskMetricSummary(columnKey) != "NA") {
+                            var row = createRowMetadataForColumn(
+                                columnKey, taskMetricsJSON[columnKey], 0);
+                            taskSummaryMetricsTableArray.push(row);
+                        }
+                        break;
+                }
+            });
+            var taskSummaryMetricsTableFilteredArray = taskSummaryMetricsTableArray.filter(row => row.checkboxId < 11);
+            taskSummaryMetricsTableCurrentStateArray = taskSummaryMetricsTableFilteredArray.slice();
+            reselectCheckboxesBasedOnTaskTableState();
+        }
+
+        function printStageData(executorSummaryDataJSON, taskMetricsJSON, stageDataJSON, activeTasksJSON) {
+            // rendering the UI page
+
+            tasksSummary.append(Mustache.render($(template).filter("#stages-summary-template").html()));
+
+            $("#additionalMetrics").click(function(){
+                $("#arrowtoggle1").toggleClass("arrow-open arrow-closed");
+                $("#toggle-metrics").toggleClass("d-none");
+                if (DB) {
+                    DB.setItem("arrowtoggle1class", $("#arrowtoggle1").attr('class'));
+                }
+            });
+
+            $("#aggregatedMetrics").click(function(){
+                $("#arrowtoggle2").toggleClass("arrow-open arrow-closed");
+                $("#toggle-aggregatedMetrics").toggleClass("d-none");
+                if (DB) {
+                    DB.setItem("arrowtoggle2class", $("#arrowtoggle2").attr('class'));
+                }
+            });
+
             var dataToShow = {};
-            dataToShow.showInputData = responseBody.inputBytes > 0;
-            dataToShow.showOutputData = responseBody.outputBytes > 0;
-            dataToShow.showShuffleReadData = responseBody.shuffleReadBytes > 0;
-            dataToShow.showShuffleWriteData = responseBody.shuffleWriteBytes > 0;
+            dataToShow.showInputData = stageDataJSON.inputBytes > 0;
+            dataToShow.showOutputData = stageDataJSON.outputBytes > 0;
+            dataToShow.showShuffleReadData = stageDataJSON.shuffleReadBytes > 0;
+            dataToShow.showShuffleWriteData = stageDataJSON.shuffleWriteBytes > 0;
             dataToShow.showBytesSpilledData =
-                (responseBody.diskBytesSpilled > 0 || responseBody.memoryBytesSpilled > 0);
+                (stageDataJSON.diskBytesSpilled > 0 || stageDataJSON.memoryBytesSpilled > 0);
 
             var columnIndicesToRemove = [];
             if (!dataToShow.showShuffleReadData) {
@@ -407,320 +668,14 @@ $(document).ready(function () {
             }
 
             // prepare data for executor summary table
-            var stageExecutorSummaryInfoKeys = Object.keys(responseBody.executorSummary);
-            $.getJSON(createRESTEndPointForExecutorsPage(appId),
-              function(executorSummaryResponse, status, jqXHR) {
-                var executorDetailsMap = {};
-                executorSummaryResponse.forEach(function (executorDetail) {
-                    executorDetailsMap[executorDetail.id] = executorDetail;
-                });
-
-                var executorSummaryTable = [];
-                stageExecutorSummaryInfoKeys.forEach(function (columnKeyIndex) {
-                    var executorSummary = responseBody.executorSummary[columnKeyIndex];
-                    var executorDetail = executorDetailsMap[columnKeyIndex.toString()];
-                    executorSummary.id = columnKeyIndex;
-                    executorSummary.executorLogs = {};
-                    executorSummary.hostPort = "CANNOT FIND ADDRESS";
-
-                    if (executorDetail) {
-                        if (executorDetail["executorLogs"]) {
-                            responseBody.executorSummary[columnKeyIndex].executorLogs =
-                                executorDetail["executorLogs"];
-                            }
-                        if (executorDetail["hostPort"]) {
-                            responseBody.executorSummary[columnKeyIndex].hostPort =
-                                executorDetail["hostPort"];
-                        }
-                    }
-                    executorSummaryTable.push(responseBody.executorSummary[columnKeyIndex]);
-                });
-                // building task aggregated metrics by executor table
-                var executorSummaryConf = {
-                    "data": executorSummaryTable,
-                    "columns": [
-                        {data : "id"},
-                        {data : "executorLogs", render: formatLogsCells},
-                        {data : "hostPort"},
-                        {
-                            data : function (row, type) {
-                                return type === 'display' ? formatDuration(row.taskTime) : row.taskTime;
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                var totaltasks = row.succeededTasks + row.failedTasks + row.killedTasks;
-                                return type === 'display' ? totaltasks : totaltasks.toString();
-                            }
-                        },
-                        {data : "failedTasks"},
-                        {data : "killedTasks"},
-                        {data : "succeededTasks"},
-                        {data : "isExcludedForStage"},
-                        {
-                            data : function (row, type) {
-                                return row.inputRecords != 0 ? formatBytes(row.inputBytes, type) + " / " + row.inputRecords : "";
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                return row.outputRecords != 0 ? formatBytes(row.outputBytes, type) + " / " + row.outputRecords : "";
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                return row.shuffleReadRecords != 0 ? formatBytes(row.shuffleRead, type) + " / " + row.shuffleReadRecords : "";
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                return row.shuffleWriteRecords != 0 ? formatBytes(row.shuffleWrite, type) + " / " + row.shuffleWriteRecords : "";
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                return typeof row.memoryBytesSpilled != 'undefined' ? formatBytes(row.memoryBytesSpilled, type) : "";
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                return typeof row.diskBytesSpilled != 'undefined' ? formatBytes(row.diskBytesSpilled, type) : "";
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                var peakMemoryMetrics = row.peakMemoryMetrics;
-                                if (typeof peakMemoryMetrics !== 'undefined') {
-                                    if (type !== 'display')
-                                        return peakMemoryMetrics.JVMHeapMemory;
-                                    else
-                                        return (formatBytes(peakMemoryMetrics.JVMHeapMemory, type) + ' / ' +
-                                            formatBytes(peakMemoryMetrics.JVMOffHeapMemory, type));
-                                } else {
-                                    if (type !== 'display') {
-                                        return 0;
-                                    } else {
-                                        return '0.0 B / 0.0 B';
-                                    }
-                                }
-
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                 var peakMemoryMetrics = row.peakMemoryMetrics
-                                 if (typeof peakMemoryMetrics !== 'undefined') {
-                                     if (type !== 'display')
-                                         return peakMemoryMetrics.OnHeapExecutionMemory;
-                                     else
-                                         return (formatBytes(peakMemoryMetrics.OnHeapExecutionMemory, type) + ' / ' +
-                                             formatBytes(peakMemoryMetrics.OffHeapExecutionMemory, type));
-                                 } else {
-                                     if (type !== 'display') {
-                                         return 0;
-                                     } else {
-                                         return '0.0 B / 0.0 B';
-                                     }
-                                  }
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                var peakMemoryMetrics = row.peakMemoryMetrics
-                                if (typeof peakMemoryMetrics !== 'undefined') {
-                                    if (type !== 'display')
-                                        return peakMemoryMetrics.OnHeapStorageMemory;
-                                    else
-                                        return (formatBytes(peakMemoryMetrics.OnHeapStorageMemory, type) + ' / ' +
-                                            formatBytes(peakMemoryMetrics.OffHeapStorageMemory, type));
-                                } else {
-                                    if (type !== 'display') {
-                                        return 0;
-                                    } else {
-                                        return '0.0 B / 0.0 B';
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            data : function (row, type) {
-                                var peakMemoryMetrics = row.peakMemoryMetrics
-                                if (typeof peakMemoryMetrics !== 'undefined') {
-                                    if (type !== 'display')
-                                        return peakMemoryMetrics.DirectPoolMemory;
-                                    else
-                                        return (formatBytes(peakMemoryMetrics.DirectPoolMemory, type) + ' / ' +
-                                            formatBytes(peakMemoryMetrics.MappedPoolMemory, type));
-                                } else {
-                                    if (type !== 'display') {
-                                        return 0;
-                                    } else {
-                                        return '0.0 B / 0.0 B';
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    "columnDefs": [
-                        { "visible": false, "targets": 15 },
-                        { "visible": false, "targets": 16 },
-                        { "visible": false, "targets": 17 },
-                        { "visible": false, "targets": 18 }
-                    ],
-                    "deferRender": true,
-                    "order": [[0, "asc"]],
-                    "bAutoWidth": false,
-                    "oLanguage": {
-                        "sEmptyTable": "No data to show yet"
-                    }
-                };
-                executorSummaryTableSelector =
-                    $("#summary-executor-table").DataTable(executorSummaryConf);
-                $('#parent-container [data-toggle="tooltip"]').tooltip();
-
-                executorSummaryTableSelector.column(9).visible(dataToShow.showInputData);
-                if (dataToShow.showInputData) {
-                    $('#executor-summary-input').attr("data-toggle", "tooltip")
-                        .attr("data-placement", "top")
-                        .attr("title", "Bytes and records read from Hadoop or from Spark storage.");
-                    $('#executor-summary-input').tooltip(true);
-                }
-                executorSummaryTableSelector.column(10).visible(dataToShow.showOutputData);
-                if (dataToShow.showOutputData) {
-                    $('#executor-summary-output').attr("data-toggle", "tooltip")
-                        .attr("data-placement", "top")
-                        .attr("title", "Bytes and records written to Hadoop.");
-                    $('#executor-summary-output').tooltip(true);
-                }
-                executorSummaryTableSelector.column(11).visible(dataToShow.showShuffleReadData);
-                if (dataToShow.showShuffleReadData) {
-                    $('#executor-summary-shuffle-read').attr("data-toggle", "tooltip")
-                        .attr("data-placement", "top")
-                        .attr("title", "Total shuffle bytes and records read (includes both data read locally and data read from remote executors).");
-                    $('#executor-summary-shuffle-read').tooltip(true);
-                }
-                executorSummaryTableSelector.column(12).visible(dataToShow.showShuffleWriteData);
-                if (dataToShow.showShuffleWriteData) {
-                    $('#executor-summary-shuffle-write').attr("data-toggle", "tooltip")
-                        .attr("data-placement", "top")
-                        .attr("title", "Bytes and records written to disk in order to be read by a shuffle in a future stage.");
-                    $('#executor-summary-shuffle-write').tooltip(true);
-                }
-                executorSummaryTableSelector.column(13).visible(dataToShow.showBytesSpilledData);
-                executorSummaryTableSelector.column(14).visible(dataToShow.showBytesSpilledData);
-            });
+            var stageExecutorSummaryInfoKeys = Object.keys(stageDataJSON.executorSummary);
+            printExecutorSummaryTable(executorSummaryDataJSON, stageDataJSON, stageExecutorSummaryInfoKeys, dataToShow);
 
             // prepare data for accumulatorUpdates
-            var accumulatorTable = responseBody.accumulatorUpdates.filter(accumUpdate =>
+            var accumulatorTable = stageDataJSON.accumulatorUpdates.filter(accumUpdate =>
                 !(accumUpdate.name).toString().includes("internal."));
 
-                var quantiles = "0,0.25,0.5,0.75,1.0";
-                $.getJSON(endPoint + "/" + stageAttemptId + "/taskSummary?quantiles=" + quantiles,
-                  function(taskMetricsResponse, status, jqXHR) {
-                    var taskMetricKeys = Object.keys(taskMetricsResponse);
-                    taskMetricKeys.forEach(function (columnKey) {
-                        switch(columnKey) {
-                            case "shuffleReadMetrics":
-                                var row1 = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 3);
-                                var row2 = createRowMetadataForColumn(
-                                    "shuffleReadBlockedTime", taskMetricsResponse[columnKey], 13);
-                                var row3 = createRowMetadataForColumn(
-                                    "shuffleRemoteReads", taskMetricsResponse[columnKey], 14);
-                                if (dataToShow.showShuffleReadData) {
-                                    taskSummaryMetricsTableArray.push(row1);
-                                    taskSummaryMetricsTableArray.push(row2);
-                                    taskSummaryMetricsTableArray.push(row3);
-                                }
-                                break;
-
-                            case "schedulerDelay":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 11);
-                                taskSummaryMetricsTableArray.push(row);
-                                break;
-
-                            case "executorDeserializeTime":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 12);
-                                taskSummaryMetricsTableArray.push(row);
-                                break;
-
-                            case "resultSerializationTime":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 15);
-                                taskSummaryMetricsTableArray.push(row);
-                                break;
-
-                            case "gettingResultTime":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 16);
-                                taskSummaryMetricsTableArray.push(row);
-                                break;
-
-                            case "peakExecutionMemory":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 17);
-                                taskSummaryMetricsTableArray.push(row);
-                                break;
-
-                            case "inputMetrics":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 1);
-                                if (dataToShow.showInputData) {
-                                    taskSummaryMetricsTableArray.push(row);
-                                }
-                                break;
-
-                            case "outputMetrics":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 2);
-                                if (dataToShow.showOutputData) {
-                                    taskSummaryMetricsTableArray.push(row);
-                                }
-                                break;
-
-                            case "shuffleWriteMetrics":
-                                var row1 = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 4);
-                                var row2 = createRowMetadataForColumn(
-                                    "shuffleWriteTime", taskMetricsResponse[columnKey], 21);
-                                if (dataToShow.showShuffleWriteData) {
-                                    taskSummaryMetricsTableArray.push(row1);
-                                    taskSummaryMetricsTableArray.push(row2);
-                                }
-                                break;
-
-                            case "diskBytesSpilled":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 5);
-                                if (dataToShow.showBytesSpilledData) {
-                                    taskSummaryMetricsTableArray.push(row);
-                                }
-                                break;
-
-                            case "memoryBytesSpilled":
-                                var row = createRowMetadataForColumn(
-                                    columnKey, taskMetricsResponse[columnKey], 6);
-                                if (dataToShow.showBytesSpilledData) {
-                                    taskSummaryMetricsTableArray.push(row);
-                                }
-                                break;
-
-                            default:
-                                if (getColumnNameForTaskMetricSummary(columnKey) != "NA") {
-                                    var row = createRowMetadataForColumn(
-                                        columnKey, taskMetricsResponse[columnKey], 0);
-                                    taskSummaryMetricsTableArray.push(row);
-                                }
-                                break;
-                        }
-                    });
-                    var taskSummaryMetricsTableFilteredArray =
-                        taskSummaryMetricsTableArray.filter(row => row.checkboxId < 11);
-                    taskSummaryMetricsTableCurrentStateArray = taskSummaryMetricsTableFilteredArray.slice();
-                    reselectCheckboxesBasedOnTaskTableState();
-                });
+                printTaskMetricsTable(taskMetricsJSON, dataToShow);
 
                 // building accumulator update table
                 var accumulatorConf = {
@@ -738,42 +693,17 @@ $(document).ready(function () {
                 $("#accumulator-table").DataTable(accumulatorConf);
 
                 // building tasks table that uses server side functionality
-                var totalTasksToShow = responseBody.numCompleteTasks + responseBody.numActiveTasks +
-                    responseBody.numKilledTasks + responseBody.numFailedTasks;
+                var totalTasksToShow = stageDataJSON.numCompleteTasks + stageDataJSON.numActiveTasks +
+                    stageDataJSON.numKilledTasks + stageDataJSON.numFailedTasks;
                 var taskTable = "#active-tasks-table";
                 var taskConf = {
-                    "serverSide": true,
                     "paging": true,
                     "info": true,
                     "processing": true,
                     "lengthMenu": [[20, 40, 60, 100, totalTasksToShow], [20, 40, 60, 100, "All"]],
                     "orderMulti": false,
                     "bAutoWidth": false,
-                    "ajax": {
-                        "url": endPoint + "/" + stageAttemptId + "/taskTable",
-                        "data": function (data) {
-                            var columnIndexToSort = 0;
-                            var columnNameToSort = "Index";
-                            if (data.order[0].column && data.order[0].column != "") {
-                                columnIndexToSort = parseInt(data.order[0].column);
-                                columnNameToSort = data.columns[columnIndexToSort].name;
-                            }
-                            delete data.columns;
-                            data.numTasks = totalTasksToShow;
-                            data.columnIndexToSort = columnIndexToSort;
-                            data.columnNameToSort = columnNameToSort;
-                        },
-                        "dataSrc": function (jsons) {
-                            var jsonStr = JSON.stringify(jsons);
-                            var tasksToShow = JSON.parse(jsonStr);
-                            return tasksToShow.aaData;
-                        },
-                        "error": function (jqXHR, textStatus, errorThrown) {
-                            alert("Unable to connect to the server. Looks like the Spark " +
-                              "application must have ended. Please Switch to the history UI.");
-                            $("#active-tasks-table_processing").css("display","none");
-                        }
-                    },
+                    "data": activeTasksJSON,
                     "columns": [
                         {data: function (row, type) {
                             return type !== 'display' ? (isNaN(row.index) ? 0 : row.index ) : row.index;
@@ -983,7 +913,7 @@ $(document).ready(function () {
                         {
                             data : function (row, type) {
                                 var msg = row.errorMessage;
-                                if (typeof msg === 'undefined') {
+                                if (typeof msg === 'undefined' || msg === null) {
                                     return "";
                                 } else {
                                     var indexOfLineSeparator = msg.indexOf("\n");
@@ -1009,6 +939,35 @@ $(document).ready(function () {
                     ],
                     "deferRender": true
                 };
+                if (getAjaxEnabled()) {
+                    var taskTableAjaxConf = {
+                        "url": endPoint + "/" + stageAttemptId + "/taskTable",
+                        "data": function (data) {
+                            var columnIndexToSort = 0;
+                            var columnNameToSort = "Index";
+                            if (data.order[0].column && data.order[0].column != "") {
+                                columnIndexToSort = parseInt(data.order[0].column);
+                                columnNameToSort = data.columns[columnIndexToSort].name;
+                            }
+                            delete data.columns;
+                            data.numTasks = totalTasksToShow;
+                            data.columnIndexToSort = columnIndexToSort;
+                            data.columnNameToSort = columnNameToSort;
+                        },
+                        "dataSrc": function (jsons) {
+                            var jsonStr = JSON.stringify(jsons);
+                            var tasksToShow = JSON.parse(jsonStr);
+                            return tasksToShow.aaData;
+                        },
+                        "error": function (jqXHR, textStatus, errorThrown) {
+                            alert("Unable to connect to the server. Looks like the Spark " +
+                              "application must have ended. Please Switch to the history UI.");
+                            $("#active-tasks-table_processing").css("display","none");
+                        }
+                    }
+                    taskConf.ajax = taskTableAjaxConf
+                    delete taskConf.data
+                }
                 taskTableSelector = $(taskTable).DataTable(taskConf);
                 $('#active-tasks-table_filter input').unbind();
                 var searchEvent;
@@ -1066,7 +1025,7 @@ $(document).ready(function () {
                 });
 
                 // title number and toggle list
-                $("#summaryMetricsTitle").html("Summary Metrics for " + "<a href='#tasksTitle'>" + responseBody.numCompleteTasks + " Completed Tasks" + "</a>");
+                $("#summaryMetricsTitle").html("Summary Metrics for " + "<a href='#tasksTitle'>" + stageDataJSON.numCompleteTasks + " Completed Tasks" + "</a>");
                 $("#tasksTitle").html("Tasks (" + totalTasksToShow + ")");
 
                 // hide or show the accumulate update table
@@ -1100,4 +1059,88 @@ $(document).ready(function () {
             });
         });
     });
+
+    $("#showAdditionalMetrics").append(
+        "<div><a id='additionalMetrics' class='collapse-table'>" +
+        "<span class='expand-input-rate-arrow arrow-closed' id='arrowtoggle1'></span>" +
+        " Show Additional Metrics" +
+        "</a></div>" +
+        "<div class='container-fluid-div ml-4 d-none' id='toggle-metrics'>" +
+        "<div id='select_all' class='select-all-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-0' data-column='0'> Select All</div>" +
+        "<div id='scheduler_delay' class='scheduler-delay-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-11' data-column='11' data-metrics-type='task'> Scheduler Delay</div>" +
+        "<div id='task_deserialization_time' class='task-deserialization-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-12' data-column='12' data-metrics-type='task'> Task Deserialization Time</div>" +
+        "<div id='shuffle_read_blocked_time' class='shuffle-read-blocked-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-13' data-column='13' data-metrics-type='task'> Shuffle Read Blocked Time</div>" +
+        "<div id='shuffle_remote_reads' class='shuffle-remote-reads-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-14' data-column='14' data-metrics-type='task'> Shuffle Remote Reads</div>" +
+        "<div id='shuffle_write_time' class='shuffle-write-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-21' data-column='21' data-metrics-type='task'> Shuffle Write Time</div>" +
+        "<div id='result_serialization_time' class='result-serialization-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-15' data-column='15' data-metrics-type='task'> Result Serialization Time</div>" +
+        "<div id='getting_result_time' class='getting-result-time-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-16' data-column='16' data-metrics-type='task'> Getting Result Time</div>" +
+        "<div id='peak_execution_memory' class='peak-execution-memory-checkbox-div'><input type='checkbox' class='toggle-vis' id='box-17' data-column='17' data-metrics-type='task'> Peak Execution Memory</div>" +
+        "<div id='executor_jvm_on_off_heap_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-15'  data-column='15' data-metrics-type='executor'> Peak JVM Memory OnHeap / OffHeap</div>" +
+        "<div id='executor_on_off_heap_execution_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-16' data-column='16' data-metrics-type='executor'> Peak Execution Memory OnHeap / OffHeap</div>" +
+        "<div id='executor_on_off_heap_storage_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-17' data-column='17' data-metrics-type='executor'> Peak Storage Memory OnHeap / OffHeap</div>" +
+        "<div id='executor_direct_mapped_pool_memory' class='executor-jvm-metrics-checkbox-div'><input type='checkbox' class='toggle-vis' id='executor-box-18' data-column='18' data-metrics-type='executor'> Peak Pool Memory Direct / Mapped</div>" +
+        "</div>");
+
+    $('#scheduler_delay').attr("data-toggle", "tooltip")
+        .attr("data-placement", "top")
+        .attr("title", "Scheduler delay includes time to ship the task from the scheduler to the executor, and time to send " +
+            "the task result from the executor to the scheduler. If scheduler delay is large, consider decreasing the size of tasks or decreasing the size of task results.");
+    $('#task_deserialization_time').attr("data-toggle", "tooltip")
+        .attr("data-placement", "top")
+        .attr("title", "Time spent deserializing the task closure on the executor, including the time to read the broadcasted task.");
+    $('#shuffle_read_blocked_time').attr("data-toggle", "tooltip")
+        .attr("data-placement", "top")
+        .attr("title", "Time that the task spent blocked waiting for shuffle data to be read from remote machines.");
+    $('#shuffle_remote_reads').attr("data-toggle", "tooltip")
+        .attr("data-placement", "top")
+        .attr("title", "Total shuffle bytes read from remote executors. This is a subset of the shuffle read bytes; the remaining shuffle data is read locally. ");
+    $('#shuffle_write_time').attr("data-toggle", "tooltip")
+        .attr("data-placement", "top")
+        .attr("title", "Time that the task spent writing shuffle data.");
+    $('#result_serialization_time').attr("data-toggle", "tooltip")
+            .attr("data-placement", "top")
+            .attr("title", "Time spent serializing the task result on the executor before sending it back to the driver.");
+    $('#getting_result_time').attr("data-toggle", "tooltip")
+            .attr("data-placement", "top")
+            .attr("title", "Time that the driver spends fetching task results from workers. If this is large, consider decreasing the amount of data returned from each task.");
+    $('#peak_execution_memory').attr("data-toggle", "tooltip")
+            .attr("data-placement", "top")
+            .attr("title", "Execution memory refers to the memory used by internal data structures created during " +
+                "shuffles, aggregations and joins when Tungsten is enabled. The value of this accumulator " +
+                "should be approximately the sum of the peak sizes across all such data structures created " +
+                "in this task. For SQL jobs, this only tracks all unsafe operators, broadcast joins, and " +
+                "external sort.");
+    $('[data-toggle="tooltip"]').tooltip();
+    var tasksSummary = $("#parent-container");
+    stageAttemptId = getStageAttemptId();
+    if (getAjaxEnabled()) {
+        appId = getStandAloneAppId();
+        var executorSummaryDataJSON;
+        var taskMetricsJSON;
+        var activeTasksJSON;
+        var stageDataJSON;
+        endPoint = stageEndPoint(appId);
+        $.getJSON(createRESTEndPointForExecutorsPage(appId), function(executorSummaryResponse, status, jqXHR) {
+            executorSummaryDataJSON = executorSummaryResponse;
+        });
+        var quantiles = "0,0.25,0.5,0.75,1.0";
+        $.getJSON(endPoint + "/" + stageAttemptId + "/taskSummary?quantiles=" + quantiles,
+                          function(taskMetricsResponse, status, jqXHR) {
+            taskMetricsJSON = taskMetricsResponse;
+        });
+        $.getJSON(endPoint + "/" + stageAttemptId + "/taskTable", function(activeTasksResponse, status, jqXHR) {
+           activeTasksJSON = activeTasksResponse;
+        });
+        $.getJSON(endPoint + "/" + stageAttemptId, function(response, status, jqXHR) {
+           stageDataJSON = response;
+        });
+        printStageData(executorSummaryDataJSON, taskMetricsJSON, stageDataJSON, activeTasksJSON)
+    } else {
+        appId = preLoadedAppId;
+        var executorSummaryDataJSON = $.parseJSON(preLoadedExecutorSummaryDataJSON);
+        var taskMetricsJSON = $.parseJSON(preLoadedTaskMetricsJSON);
+        var stageDataJSON = $.parseJSON(preLoadedStageDataJSON);
+        var activeTasksJSON = $.parseJSON(preLoadedActiveTaskTable);
+        printStageData(executorSummaryDataJSON, taskMetricsJSON, stageDataJSON, activeTasksJSON)
+    }
 });

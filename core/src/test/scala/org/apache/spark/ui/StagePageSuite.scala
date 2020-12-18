@@ -110,11 +110,21 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
     }
   }
 
+  test("Stage page should preload info when AJAX is not enabled") {
+    val html = renderStagePage(false).toString()
+    assert(html.contains("<script>setAjaxEnabled(false)</script>"))
+    assert(html.contains("var preLoadedAppId='id'"))
+    assert(html.contains("var preLoadedTaskMetricsJSON=String.raw`{\""))
+    assert(html.contains("var preLoadedStageDataJSON=String.raw`{\""))
+    assert(html.contains("var preLoadedActiveTaskTable=String.raw`[{"))
+    assert(html.contains("var preLoadedExecutorSummaryDataJSON=String.raw`["))
+  }
+
   /**
    * Render a stage page started with the given conf and return the HTML.
    * This also runs a dummy stage to populate the page with useful content.
    */
-  private def renderStagePage(): Seq[Node] = {
+  private def renderStagePage(ajaxEnabled: Boolean): Seq[Node] = {
     val conf = new SparkConf(false).set(LIVE_ENTITY_UPDATE_PERIOD, 0L)
     val statusStore = AppStatusStore.createLiveStore(conf)
     val listener = statusStore.listener.get
@@ -129,7 +139,18 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
       when(tab.headerTabs).thenReturn(Seq.empty)
       when(request.getParameter("id")).thenReturn("0")
       when(request.getParameter("attempt")).thenReturn("0")
-      val page = new StagePage(tab, statusStore)
+      val page = new StagePage(tab, statusStore, ajaxEnabled)
+
+      if (!ajaxEnabled) {
+        // If ajax is disabled, start the application so its information could be preloaded
+        listener.onApplicationStart(SparkListenerApplicationStart(
+          "name",
+          Some("id"),
+          1L,
+          "user",
+          Some("attempt"),
+          None))
+      }
 
       // Simulate a stage in job progress listener
       val stageInfo = new StageInfo(0, 0, "dummy", 1, Seq.empty, Seq.empty, "details",

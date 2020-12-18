@@ -32,9 +32,10 @@ private[ui] class StagesTab(val parent: SparkUI, val store: AppStatusStore)
   val sc = parent.sc
   val conf = parent.conf
   val killEnabled = parent.killEnabled
+  val ajaxEnabled = conf.getBoolean("spark.ui.ajax.enabled", true)
 
   attachPage(new AllStagesPage(this))
-  attachPage(new StagePage(this, store))
+  attachPage(new StagePage(this, store, ajaxEnabled))
   attachPage(new PoolPage(this))
 
   // Show pool information for only live UI.
