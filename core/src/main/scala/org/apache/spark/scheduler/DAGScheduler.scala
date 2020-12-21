@@ -2466,5 +2466,5 @@ private[spark] object DAGScheduler {
   val RESUBMIT_TIMEOUT = 200
 
   // Number of consecutive stage attempts allowed before a stage is aborted
-  val DEFAULT_MAX_CONSECUTIVE_STAGE_ATTEMPTS = 4
+  val DEFAULT_MAX_CONSECUTIVE_STAGE_ATTEMPTS = 6
 }
