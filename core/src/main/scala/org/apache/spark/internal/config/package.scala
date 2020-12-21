@@ -278,7 +278,7 @@ package object config {
       .doc("The file system schemes to report in executor metrics.")
       .version("3.1.0")
       .stringConf
-      .createWithDefaultString("file,hdfs")
+      .createWithDefaultString("file,hdfs,s3a")
 
   private[spark] val EXECUTOR_JAVA_OPTIONS =
     ConfigBuilder(SparkLauncher.EXECUTOR_EXTRA_JAVA_OPTIONS)
