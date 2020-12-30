@@ -69,5 +69,5 @@ private[spark] object Status {
         "will be reported for the status of the running spark app.")
       .version("3.0.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 }
