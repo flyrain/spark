@@ -82,6 +82,13 @@ private[sql] object CatalogV2Implicits {
         throw new AnalysisException(
           s"Cannot use catalog ${plugin.name}: does not support namespaces")
     }
+
+    def asProcedureCatalog: ProcedureCatalog = plugin match {
+      case procedureCatalog: ProcedureCatalog =>
+        procedureCatalog
+      case _ =>
+        throw new AnalysisException(s"Cannot use catalog ${plugin.name}: not a ProcedureCatalog")
+    }
   }
 
   implicit class NamespaceHelper(namespace: Array[String]) {

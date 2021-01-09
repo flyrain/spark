@@ -66,6 +66,7 @@ object TypeCoercion {
       DateTimeOperations ::
       WindowFrameCoercion ::
       StringLiteralCoercion ::
+      ProcedureArgumentCoercion ::
       Nil
 
   // See https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types.
@@ -1120,6 +1121,32 @@ object TypeCoercion {
             "The second argument of 'date_sub' function needs to be an integer.", cause = Some(e))
         }
         DateSub(l, Literal(days))
+    }
+  }
+
+  object ProcedureArgumentCoercion extends TypeCoercionRule {
+    override protected def coerceTypes(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
+      case c @ Call(procedure, args) if c.resolved =>
+        val params = procedure.parameters
+
+        val newArgs = args.zipWithIndex.map { case (arg, index) =>
+          val param = params(index)
+          val paramType = param.dataType
+          val argType = arg.dataType
+
+          if (paramType != argType && !Cast.canUpCast(argType, paramType)) {
+            throw new AnalysisException(
+              s"Wrong arg type for ${param.name}: cannot cast $argType to $paramType")
+          }
+
+          if (paramType != argType) {
+            Cast(arg, paramType)
+          } else {
+            arg
+          }
+        }
+
+        c.copy(args = newArgs)
     }
   }
 }

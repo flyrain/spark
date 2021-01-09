@@ -85,3 +85,10 @@ class NoSuchPartitionsException(message: String) extends AnalysisException(messa
 
 class NoSuchTempFunctionException(func: String)
   extends AnalysisException(s"Temporary function '$func' not found")
+
+class NoSuchProcedureException(message: String, cause: Option[Throwable] = None)
+  extends AnalysisException(message, cause = cause) {
+  def this(ident: Identifier) = {
+    this(s"Procedure ${ident.quoted} not found")
+  }
+}

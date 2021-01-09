@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, AttributeSet, Expression, Unevaluable}
 import org.apache.spark.sql.catalyst.plans.DescribeCommandSchema
 import org.apache.spark.sql.catalyst.util.CharVarcharUtils
+import org.apache.spark.sql.catalyst.util.truncatedString
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, ColumnChange}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -708,4 +709,12 @@ case class ShowPartitions(
 
   override val output: Seq[Attribute] = Seq(
     AttributeReference("partition", StringType, nullable = false)())
+}
+
+case class Call(procedure: Procedure, args: Seq[Expression]) extends Command {
+  override lazy val output: Seq[Attribute] = procedure.outputType.toAttributes
+
+  override def simpleString(maxFields: Int): String = {
+    s"Call${truncatedString(output, "[", ", ", "]", maxFields)} ${procedure.description}"
+  }
 }
