@@ -156,7 +156,7 @@ builds:
       steps:
         - build/sbt -Phadoop-3.2 -Phive "hive/test" -Dtest.exclude.tags=org.apache.spark.tags.ExtendedHiveTest
 
-  - name: apple-spark-2.12_3.1.1-snapshot-hive-2
+  - name: apple-spark-2.12_3.1.1-snapshot-hive-2-1
     branchName: branch-3.1.1-apple
     build:
       template: freestyle:v4:build
@@ -376,7 +376,7 @@ builds:
     finally:
       tag:
         enabled: true
-        expression: "releases_2.12/3.1.0.1-apple"
+        expression: "releases_2.12/3.1.1.1-apple"
 
   - name: apple-spark-2.12_3.1.1-binaries-release
     branchName: branch-3.1.1-apple-release
