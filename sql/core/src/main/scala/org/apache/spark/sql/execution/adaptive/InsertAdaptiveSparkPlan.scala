@@ -85,6 +85,7 @@ case class InsertAdaptiveSparkPlan(
   //     the query needs to add exchanges later.
   //   - The query contains sub-query.
   private def shouldApplyAQE(plan: SparkPlan, isSubquery: Boolean): Boolean = {
+    !conf.contains("spark.pie.workspace") && (
     conf.getConf(SQLConf.ADAPTIVE_EXECUTION_FORCE_APPLY) || isSubquery || {
       plan.find {
         case _: Exchange => true
@@ -94,7 +95,7 @@ case class InsertAdaptiveSparkPlan(
           case _ => false
         }.isDefined)
       }.isDefined
-    }
+    })
   }
 
   private def supportAdaptive(plan: SparkPlan): Boolean = {
