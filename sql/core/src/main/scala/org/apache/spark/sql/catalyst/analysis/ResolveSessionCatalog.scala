@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, CatalogTable, CatalogTableType, CatalogUtils}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.connector.catalog.{CatalogManager, CatalogPlugin, CatalogV2Util, Identifier, LookupCatalog, SupportsNamespaces, TableCatalog, TableChange, V1Table}
+import org.apache.spark.sql.connector.catalog.{CatalogManager, CatalogPlugin, CatalogV2Util, Identifier, LookupCatalog, SupportsMigrate, SupportsNamespaces, SupportsSnapshot, TableCatalog, TableChange, V1Table}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{CreateTable, DataSource}
@@ -304,6 +304,31 @@ class ResolveSessionCatalog(
           writeOptions = c.writeOptions,
           ignoreIfExists = c.ifNotExists)
       }
+
+    case m @ MigrateTableStatement(SessionCatalogAndTable(catalog, tbl), _, _) =>
+      if (!catalog.isInstanceOf[SupportsMigrate]) {
+        throw new AnalysisException(
+          s"Catalog ${catalog.name} does not support the Migrate command.")
+      }
+      MigrateTable(
+        catalog.asInstanceOf[SupportsMigrate],
+        tbl.asIdentifier,
+        convertTableProperties(m))
+
+    case s @ SnapshotTableStatement(
+      CatalogAndIdentifier(sourceCatalog, sourceIdent),
+      SessionCatalogAndTable(catalog, ident), _, _, _) =>
+        if (!catalog.isInstanceOf[SupportsSnapshot]) {
+          throw new AnalysisException(
+            s"Catalog ${catalog.name} does not support the Snapshot command.")
+        }
+        SnapshotTable(
+          sourceCatalog.asTableCatalog,
+          sourceIdent,
+          catalog.asInstanceOf[SupportsSnapshot],
+          ident.asIdentifier,
+          convertTableProperties(s)
+        )
 
     case RefreshTable(ResolvedV1TableIdentifier(ident)) =>
       RefreshTableCommand(ident.asTableIdentifier)

@@ -20,7 +20,7 @@ package org.apache.spark.sql.catalyst.analysis
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.connector.catalog.{CatalogManager, CatalogPlugin, LookupCatalog, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog.{CatalogManager, CatalogPlugin, LookupCatalog, SupportsMigrate, SupportsSnapshot, TableCatalog, TableChange}
 
 /**
  * Resolves catalogs from the multi-part identifiers in SQL statements, and convert the statements
@@ -165,6 +165,31 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         convertTableProperties(c),
         writeOptions = c.writeOptions,
         ignoreIfExists = c.ifNotExists)
+
+    case m @ MigrateTableStatement(NonSessionCatalogAndTable(catalog, tbl), _, _) =>
+      if (!catalog.isInstanceOf[SupportsMigrate]) {
+        throw new AnalysisException(
+          s"Catalog ${catalog.name} does not support the Migrate command.")
+      }
+      MigrateTable(
+        catalog.asInstanceOf[SupportsMigrate],
+        tbl.asIdentifier,
+        convertTableProperties(m))
+
+    case s @ SnapshotTableStatement(
+      CatalogAndIdentifier(sourceCatalog, sourceIdent),
+      NonSessionCatalogAndTable(catalog, ident), _, _, _) =>
+        if (!catalog.isInstanceOf[SupportsSnapshot]) {
+          throw new AnalysisException(
+            s"Catalog ${catalog.name} does not support the Snapshot command.")
+        }
+        SnapshotTable(
+          sourceCatalog.asTableCatalog,
+          sourceIdent,
+          catalog.asInstanceOf[SupportsSnapshot],
+          ident.asIdentifier,
+          convertTableProperties(s)
+        )
 
     case c @ ReplaceTableStatement(
          NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _) =>

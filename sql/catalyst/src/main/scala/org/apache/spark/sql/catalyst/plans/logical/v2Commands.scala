@@ -722,3 +722,24 @@ case class Call(procedure: Procedure, args: Seq[Expression]) extends Command {
     s"Call${truncatedString(output, "[", ", ", "]", maxFields)} ${procedure.description}"
   }
 }
+
+/**
+ * The logical plan that defines a DSv2 catalog specific migration. Used for changing the underlying
+ * format and properties of a table without changing the Catalog identifier.
+ */
+case class MigrateTable(
+    tableCatalog: SupportsMigrate,
+    tableName: Identifier,
+    properties: Map[String, String]) extends Command
+
+/**
+ * The logical plan that defines a DSv2 catalog specific snapshot. Used for creating
+ * a new reference to an existing table but in a different underlying format or
+ * set of properties.
+ */
+case class SnapshotTable(
+    sourceTableCatalog: TableCatalog,
+    sourceIdent: Identifier,
+    tableCatalog: SupportsSnapshot,
+    ident: Identifier,
+    properties: Map[String, String]) extends Command

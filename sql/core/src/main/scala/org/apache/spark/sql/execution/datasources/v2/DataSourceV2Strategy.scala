@@ -160,6 +160,12 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
             propsWithOwner, writeOptions, ifNotExists) :: Nil
       }
 
+    case MigrateTable(catalog, ident, props) =>
+      MigrateTableExec(catalog, ident, props) :: Nil
+
+    case SnapshotTable(sourceTableCatalog, sourceIdent, tableCatalog, ident, props) =>
+      SnapshotTableExec(sourceTableCatalog, sourceIdent, tableCatalog, ident, props) :: Nil
+
     case RefreshTable(r: ResolvedTable) =>
       RefreshTableExec(r.catalog, r.identifier, invalidateCache(r, recacheTable = true)) :: Nil
 
