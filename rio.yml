@@ -259,7 +259,7 @@ builds:
     branchName: branch-3.1.1-apple
     timeout: 90
     machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
+      baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
         NOLINT_ON_COMPILE: "1"
         SCALA_BINARY_VERSION: "2.12"
@@ -282,7 +282,7 @@ builds:
     branchName: branch-3.1.1-apple
     timeout: 90
     machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
+      baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
         NOLINT_ON_COMPILE: "1"
         SCALA_BINARY_VERSION: "2.12"
@@ -305,7 +305,7 @@ builds:
     branchName: branch-3.1.1-apple-release
     timeout: 90
     machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
+      baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
         NOLINT_ON_COMPILE: "1"
         SCALA_BINARY_VERSION: "2.12"
@@ -333,7 +333,7 @@ builds:
     branchName: branch-3.1.1-apple-release
     timeout: 90
     machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
+      baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
         NOLINT_ON_COMPILE: "1"
         SCALA_BINARY_VERSION: "2.12"
