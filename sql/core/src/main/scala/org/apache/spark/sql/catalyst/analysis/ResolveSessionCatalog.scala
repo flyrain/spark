@@ -182,6 +182,26 @@ class ResolveSessionCatalog(
         createAlterTable(nameParts, catalog, tbl, Seq(change))
       }
 
+    case AlterTableAddPartitionFieldStatement(
+        nameParts @ SessionCatalogAndTable(catalog, tbl), transform, name) =>
+      loadTable(catalog, tbl.asIdentifier).collect {
+        case _: V1Table =>
+          throw new AnalysisException("Cannot add partition fields to v1 tables")
+      }.getOrElse {
+        val change = TableChange.addPartitionField(transform, name.orNull)
+        createAlterTable(nameParts, catalog, tbl, Seq(change))
+      }
+
+    case AlterTableDropPartitionFieldStatement(
+        nameParts @ SessionCatalogAndTable(catalog, tbl), transform) =>
+      loadTable(catalog, tbl.asIdentifier).collect {
+        case _: V1Table =>
+          throw new AnalysisException("Cannot drop partition fields from v1 tables")
+      }.getOrElse {
+        val change = TableChange.dropPartitionField(transform)
+        createAlterTable(nameParts, catalog, tbl, Seq(change))
+      }
+
     case AlterTableSetPropertiesStatement(
          nameParts @ SessionCatalogAndTable(catalog, tbl), props) =>
       loadTable(catalog, tbl.asIdentifier).collect {

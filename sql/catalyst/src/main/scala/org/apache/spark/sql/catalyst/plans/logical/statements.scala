@@ -453,3 +453,18 @@ case class AlterTableSetWriteDistributionAndOrderingStatement(
     tableName: Seq[String],
     distributionMode: String,
     ordering: Seq[SortOrder]) extends ParsedStatement
+
+/**
+ * ALTER TABLE ... ADD PARTITION FIELD ... statement, as parsed from SQL.
+ */
+case class AlterTableAddPartitionFieldStatement(
+    tableName: Seq[String],
+    transform: Transform,
+    name: Option[String]) extends ParsedStatement
+
+/**
+ * ALTER TABLE ... DROP PARTITION FIELD ... statement, as parsed from SQL.
+ */
+case class AlterTableDropPartitionFieldStatement(
+    tableName: Seq[String],
+    transform: Transform) extends ParsedStatement

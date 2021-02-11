@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 
 import org.apache.spark.annotation.Evolving;
 import org.apache.spark.sql.connector.expressions.SortOrder;
+import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.DataType;
 
 /**
@@ -276,6 +277,72 @@ public interface TableChange {
       int result = Objects.hash(distributionMode);
       result = 31 * result + Arrays.hashCode(ordering);
       return result;
+    }
+  }
+
+  static TableChange addPartitionField(Transform transform, String name) {
+    return new AddPartitionField(transform, name);
+  }
+
+  final class AddPartitionField implements TableChange {
+    private final Transform transform;
+    private final String name;
+
+    private AddPartitionField(Transform transform, String name) {
+      this.transform = transform;
+      this.name = name;
+    }
+
+    public Transform transform() {
+      return transform;
+    }
+
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      AddPartitionField that = (AddPartitionField) o;
+      return Objects.equals(transform, that.transform) && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(transform, name);
+    }
+  }
+
+  static TableChange dropPartitionField(Transform transform) {
+    return new DropPartitionField(transform);
+  }
+
+  final class DropPartitionField implements TableChange {
+    private final Transform transform;
+
+    private DropPartitionField(Transform transform) {
+      this.transform = transform;
+    }
+
+    public Transform transform() {
+      return transform;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      DropPartitionField that = (DropPartitionField) o;
+      return Objects.equals(transform, that.transform);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(transform);
     }
   }
 

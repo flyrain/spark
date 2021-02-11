@@ -2219,6 +2219,69 @@ class PlanResolutionSuite extends AnalysisTest {
     assert(e.message.contains("Cannot set write distribution and ordering in v1 tables"))
   }
 
+  test("alter table: add partition field to v2 tables") {
+    Seq("v2Table", "testcat.tab").foreach { t =>
+      val sql = s"ALTER TABLE $t ADD PARTITION FIELD bucket(8, s)"
+
+      val transform = bucket(8, Array(FieldReference("s")))
+      val expectedChange = TableChange.addPartitionField(transform, null)
+
+      parseAndResolve(sql) match {
+        case AlterTable(_, _, _: DataSourceV2Relation, changes) =>
+          assert(changes.size == 1, "expected only one change")
+          assert(changes.head == expectedChange, "change must match")
+        case _ =>
+          fail("expected AlterTable")
+      }
+    }
+  }
+
+  test("alter table: add partition field with an alias to v2 tables") {
+    Seq("v2Table", "testcat.tab").foreach { t =>
+      val sql = s"ALTER TABLE $t ADD PARTITION FIELD bucket(8, s) AS new_part_col"
+
+      val transform = bucket(8, Array(FieldReference("s")))
+      val expectedChange = TableChange.addPartitionField(transform, "new_part_col")
+
+      parseAndResolve(sql) match {
+        case AlterTable(_, _, _: DataSourceV2Relation, changes) =>
+          assert(changes.size == 1, "expected only one change")
+          assert(changes.head == expectedChange, "change must match")
+        case _ =>
+          fail("expected AlterTable")
+      }
+    }
+  }
+
+  test("alter table: drop partition field from v2 tables") {
+    Seq("v2Table", "testcat.tab").foreach { t =>
+      val sql = s"ALTER TABLE $t DROP PARTITION FIELD bucket(8, s)"
+
+      val transform = bucket(8, Array(FieldReference("s")))
+      val expectedChange = TableChange.dropPartitionField(transform)
+
+      parseAndResolve(sql) match {
+        case AlterTable(_, _, _: DataSourceV2Relation, changes) =>
+          assert(changes.size == 1, "expected only one change")
+          assert(changes.head == expectedChange, "change must match")
+        case _ =>
+          fail("expected AlterTable")
+      }
+    }
+  }
+
+  test("alter table: cannot add/drop partition fields for v1 tables") {
+    val e1 = intercept[AnalysisException] {
+      parseAndResolve("ALTER TABLE v1Table ADD PARTITION FIELD bucket(8, s)")
+    }
+    assert(e1.message.contains("Cannot add partition fields to v1 tables"))
+
+    val e2 = intercept[AnalysisException] {
+      parseAndResolve("ALTER TABLE v1Table DROP PARTITION FIELD bucket(8, s)")
+    }
+    assert(e2.message.contains("Cannot drop partition fields from v1 tables"))
+  }
+
   // TODO: add tests for more commands.
 }
 

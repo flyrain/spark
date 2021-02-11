@@ -104,6 +104,16 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
       val change = TableChange.setWriteDistributionAndOrdering(distributionMode, order.toArray)
       createAlterTable(nameParts, catalog, tbl, Seq(change))
 
+    case AlterTableAddPartitionFieldStatement(
+        nameParts @ NonSessionCatalogAndTable(catalog, tbl), transform, name) =>
+      val change = TableChange.addPartitionField(transform, name.orNull)
+      createAlterTable(nameParts, catalog, tbl, Seq(change))
+
+    case AlterTableDropPartitionFieldStatement(
+        nameParts @ NonSessionCatalogAndTable(catalog, tbl), transform) =>
+      val change = TableChange.dropPartitionField(transform)
+      createAlterTable(nameParts, catalog, tbl, Seq(change))
+
     case AlterTableSetPropertiesStatement(
          nameParts @ NonSessionCatalogAndTable(catalog, tbl), props) =>
       val changes = props.map { case (key, value) =>

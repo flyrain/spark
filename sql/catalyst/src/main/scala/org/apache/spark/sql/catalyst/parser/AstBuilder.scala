@@ -3574,6 +3574,27 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
   }
 
   /**
+   * Create an [[AlterTableAddPartitionFieldStatement]] command.
+   */
+  override def visitAddPartitionField(
+      ctx: AddPartitionFieldContext): AlterTableAddPartitionFieldStatement = withOrigin(ctx) {
+    val tableName = visitMultipartIdentifier(ctx.multipartIdentifier)
+    val transform = visitTransform(ctx.transform)
+    val name = Option(ctx.name).map(_.getText)
+    AlterTableAddPartitionFieldStatement(tableName, transform, name)
+  }
+
+  /**
+   * Create an [[AlterTableDropPartitionFieldStatement]] command.
+   */
+  override def visitDropPartitionField(
+      ctx: DropPartitionFieldContext): AlterTableDropPartitionFieldStatement = withOrigin(ctx) {
+    val tableName = visitMultipartIdentifier(ctx.multipartIdentifier)
+    val transform = visitTransform(ctx.transform)
+    AlterTableDropPartitionFieldStatement(tableName, transform)
+  }
+
+  /**
    * Create a [[DescribeColumn]] or [[DescribeRelation]] commands.
    */
   override def visitDescribeRelation(ctx: DescribeRelationContext): LogicalPlan = withOrigin(ctx) {
