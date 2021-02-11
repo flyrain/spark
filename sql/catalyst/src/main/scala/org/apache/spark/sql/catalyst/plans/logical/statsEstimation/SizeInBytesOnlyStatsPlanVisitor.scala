@@ -150,4 +150,17 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   }
 
   override def visitWindow(p: Window): Statistics = visitUnaryNode(p)
+
+  override def visitDynamicFileFilter(p: DynamicFileFilter): Statistics = {
+    // file filter node is a binary node and we don't want to apply the default approach,
+    // so we delegate to the scan plan until we implement a better algorithm
+    default(p.scanPlan)
+  }
+
+  override def visitDynamicFileFilterWithCardinalityCheck(
+      p: DynamicFileFilterWithCardinalityCheck): Statistics = {
+    // file filter node is a binary node and we don't want to apply the default approach,
+    // so we delegate to the scan plan until we implement a better algorithm
+    default(p.scanPlan)
+  }
 }

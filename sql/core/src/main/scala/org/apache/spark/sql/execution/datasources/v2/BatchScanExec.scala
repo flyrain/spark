@@ -28,7 +28,8 @@ import org.apache.spark.sql.connector.read.{InputPartition, PartitionReaderFacto
  */
 case class BatchScanExec(
     output: Seq[AttributeReference],
-    @transient scan: Scan) extends DataSourceV2ScanExecBase {
+    @transient scan: Scan,
+    cachePartitions: Boolean = true) extends DataSourceV2ScanExecBase {
 
   @transient lazy val batch = scan.toBatch
 
@@ -40,7 +41,16 @@ case class BatchScanExec(
 
   override def hashCode(): Int = batch.hashCode()
 
-  @transient override lazy val partitions: Seq[InputPartition] = batch.planInputPartitions()
+  // we should not cache partitions in order to support dynamic filters
+  override def partitions: Seq[InputPartition] = {
+    if (cachePartitions) {
+      cachedPartitions
+    } else {
+      batch.planInputPartitions()
+    }
+  }
+
+  @transient private lazy val cachedPartitions = batch.planInputPartitions()
 
   override lazy val readerFactory: PartitionReaderFactory = batch.createReaderFactory()
 

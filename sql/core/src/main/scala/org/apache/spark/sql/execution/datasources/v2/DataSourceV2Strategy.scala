@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.expressions.{And, Expression, GenericIntern
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog._
+import org.apache.spark.sql.connector.read.SupportsFileFilter
 import org.apache.spark.sql.connector.read.streaming.{ContinuousStream, MicroBatchStream}
 import org.apache.spark.sql.connector.write.V1Write
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, LocalTableScanExec, ProjectExec, RowDataSourceScanExec, SparkPlan}
@@ -106,6 +107,13 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
         v1Relation,
         tableIdentifier = None)
       withProjectAndFilter(project, filters, dsScan, needsUnsafeConversion = false) :: Nil
+
+    case PhysicalOperation(project, filters,
+        DataSourceV2ScanRelation(_, scan: SupportsFileFilter, output)) =>
+      // similar to the case below but is used for operations with dynamic file filtering,
+      // which requires us to disable caching of input splits
+      val batchExec = BatchScanExec(output, scan, cachePartitions = false)
+      withProjectAndFilter(project, filters, batchExec, !batchExec.supportsColumnar) :: Nil
 
     case PhysicalOperation(project, filters, relation: DataSourceV2ScanRelation) =>
       // projection and filters were already pushed down in the optimizer.
@@ -384,6 +392,16 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
     case c @ Call(procedure, args) =>
       val input = buildInternalRow(args)
       CallExec(c.output, procedure, input) :: Nil
+
+    case DynamicFileFilter(scanPlan, fileFilterPlan, filterable) =>
+      DynamicFileFilterExec(planLater(scanPlan), planLater(fileFilterPlan), filterable) :: Nil
+
+    case DynamicFileFilterWithCardinalityCheck(scanPlan, fileFilterPlan, filterable, accumulator) =>
+      DynamicFileFilterWithCardinalityCheckExec(
+        planLater(scanPlan),
+        planLater(fileFilterPlan),
+        filterable,
+        accumulator) :: Nil
 
     case _ => Nil
   }
