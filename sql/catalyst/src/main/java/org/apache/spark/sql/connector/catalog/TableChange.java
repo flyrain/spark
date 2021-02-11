@@ -22,6 +22,7 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 
 import org.apache.spark.annotation.Evolving;
+import org.apache.spark.sql.connector.expressions.SortOrder;
 import org.apache.spark.sql.types.DataType;
 
 /**
@@ -228,6 +229,54 @@ public interface TableChange {
    */
   static TableChange deleteColumn(String[] fieldNames) {
     return new DeleteColumn(fieldNames);
+  }
+
+  /**
+   * Create a TableChange for setting the write distribution and ordering in a table.
+   *
+   * @param distributionMode a distribution mode to use for writes
+   * @param ordering an ordering to use for writes
+   * @return a TableChange for setting the write distribution and ordering
+   */
+  static TableChange setWriteDistributionAndOrdering(
+      String distributionMode,
+      SortOrder[] ordering) {
+    return new SetWriteDistributionAndOrdering(distributionMode, ordering);
+  }
+
+  final class SetWriteDistributionAndOrdering implements TableChange {
+    private final String distributionMode;
+    private final SortOrder[] ordering;
+
+    private SetWriteDistributionAndOrdering(String distributionMode, SortOrder[] ordering) {
+      this.distributionMode = distributionMode;
+      this.ordering = ordering;
+    }
+
+    public String distributionMode() {
+      return distributionMode;
+    }
+
+    public SortOrder[] ordering() {
+      return ordering;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      SetWriteDistributionAndOrdering that = (SetWriteDistributionAndOrdering) o;
+      return Objects.equals(distributionMode, that.distributionMode) &&
+          Arrays.deepEquals(ordering, that.ordering);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Objects.hash(distributionMode);
+      result = 31 * result + Arrays.hashCode(ordering);
+      return result;
+    }
   }
 
   /**

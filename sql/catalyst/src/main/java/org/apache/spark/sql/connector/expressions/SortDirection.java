@@ -19,6 +19,9 @@ package org.apache.spark.sql.connector.expressions;
 
 import org.apache.spark.annotation.Experimental;
 
+import static org.apache.spark.sql.connector.expressions.NullOrdering.NULLS_FIRST;
+import static org.apache.spark.sql.connector.expressions.NullOrdering.NULLS_LAST;
+
 /**
  * A sort direction used in sorting expressions.
  *
@@ -26,7 +29,17 @@ import org.apache.spark.annotation.Experimental;
  */
 @Experimental
 public enum SortDirection {
-  ASCENDING, DESCENDING;
+  ASCENDING(NULLS_FIRST), DESCENDING(NULLS_LAST);
+
+  private final NullOrdering defaultNullOrdering;
+
+  SortDirection(NullOrdering defaultNullOrdering) {
+    this.defaultNullOrdering = defaultNullOrdering;
+  }
+
+  public NullOrdering defaultNullOrdering() {
+    return defaultNullOrdering;
+  }
 
   @Override
   public String toString() {

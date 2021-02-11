@@ -181,6 +181,7 @@ statement
     | ALTER TABLE multipartIdentifier
         (partitionSpec)? SET locationSpec                              #setTableLocation
     | ALTER TABLE multipartIdentifier RECOVER PARTITIONS               #recoverPartitions
+    | ALTER TABLE multipartIdentifier WRITE writeSpec                  #setWriteDistributionAndOrdering
     | DROP TABLE (IF EXISTS)? multipartIdentifier PURGE?               #dropTable
     | DROP VIEW (IF EXISTS)? multipartIdentifier                       #dropView
     | CREATE (OR REPLACE)? (GLOBAL? TEMPORARY)?
@@ -1016,6 +1017,28 @@ alterColumnAction
     | setOrDrop=(SET | DROP) NOT NULL
     ;
 
+writeSpec
+    : (writeDistributionSpec | writeOrderingSpec)+
+    ;
+
+writeDistributionSpec
+    : DISTRIBUTED BY PARTITION
+    ;
+
+writeOrderingSpec
+    : LOCALLY? ORDERED BY writeOrder
+    | UNORDERED
+    ;
+
+writeOrder
+    : fields+=writeOrderField (',' fields+=writeOrderField)*
+    | '(' fields+=writeOrderField (',' fields+=writeOrderField)* ')'
+    ;
+
+writeOrderField
+    : transform direction=(ASC | DESC)? (NULLS nullOrder=(FIRST | LAST))?
+    ;
+
 // When `SQL_standard_keyword_behavior=true`, there are 2 kinds of keywords in Spark SQL.
 // - Reserved keywords:
 //     Keywords that are reserved and can't be used as identifiers for table, view, column,
@@ -1072,6 +1095,7 @@ ansiNonReserved
     | DIRECTORIES
     | DIRECTORY
     | DISTRIBUTE
+    | DISTRIBUTED
     | DIV
     | DROP
     | ESCAPED
@@ -1112,6 +1136,7 @@ ansiNonReserved
     | LIST
     | LOAD
     | LOCAL
+    | LOCALLY
     | LOCATION
     | LOCK
     | LOCKS
@@ -1129,6 +1154,7 @@ ansiNonReserved
     | OF
     | OPTION
     | OPTIONS
+    | ORDERED
     | OUT
     | OUTPUTFORMAT
     | OVER
@@ -1202,6 +1228,7 @@ ansiNonReserved
     | UNBOUNDED
     | UNCACHE
     | UNLOCK
+    | UNORDERED
     | UNSET
     | UPDATE
     | USE
@@ -1209,6 +1236,7 @@ ansiNonReserved
     | VIEW
     | VIEWS
     | WINDOW
+    | WRITE
     | ZONE
 //--ANSI-NON-RESERVED-END
     ;
@@ -1304,6 +1332,7 @@ nonReserved
     | DIRECTORY
     | DISTINCT
     | DISTRIBUTE
+    | DISTRIBUTED
     | DIV
     | DROP
     | ELSE
@@ -1360,6 +1389,7 @@ nonReserved
     | LIST
     | LOAD
     | LOCAL
+    | LOCALLY
     | LOCATION
     | LOCK
     | LOCKS
@@ -1382,6 +1412,7 @@ nonReserved
     | OPTIONS
     | OR
     | ORDER
+    | ORDERED
     | OUT
     | OUTER
     | OUTPUTFORMAT
@@ -1467,6 +1498,7 @@ nonReserved
     | UNIQUE
     | UNKNOWN
     | UNLOCK
+    | UNORDERED
     | UNSET
     | UPDATE
     | USE
@@ -1478,6 +1510,7 @@ nonReserved
     | WHERE
     | WINDOW
     | WITH
+    | WRITE
     | ZONE
 //--DEFAULT-NON-RESERVED-END
     ;
@@ -1553,6 +1586,7 @@ DIRECTORIES: 'DIRECTORIES';
 DIRECTORY: 'DIRECTORY';
 DISTINCT: 'DISTINCT';
 DISTRIBUTE: 'DISTRIBUTE';
+DISTRIBUTED: 'DISTRIBUTED';
 DIV: 'DIV';
 DROP: 'DROP';
 ELSE: 'ELSE';
@@ -1615,6 +1649,7 @@ LINES: 'LINES';
 LIST: 'LIST';
 LOAD: 'LOAD';
 LOCAL: 'LOCAL';
+LOCALLY: 'LOCALLY';
 LOCATION: 'LOCATION';
 LOCK: 'LOCK';
 LOCKS: 'LOCKS';
@@ -1639,6 +1674,7 @@ OPTION: 'OPTION';
 OPTIONS: 'OPTIONS';
 OR: 'OR';
 ORDER: 'ORDER';
+ORDERED: 'ORDERED';
 OUT: 'OUT';
 OUTER: 'OUTER';
 OUTPUTFORMAT: 'OUTPUTFORMAT';
@@ -1728,6 +1764,7 @@ UNION: 'UNION';
 UNIQUE: 'UNIQUE';
 UNKNOWN: 'UNKNOWN';
 UNLOCK: 'UNLOCK';
+UNORDERED: 'UNORDERED';
 UNSET: 'UNSET';
 UPDATE: 'UPDATE';
 USE: 'USE';
@@ -1740,6 +1777,7 @@ WHEN: 'WHEN';
 WHERE: 'WHERE';
 WINDOW: 'WINDOW';
 WITH: 'WITH';
+WRITE: 'WRITE';
 ZONE: 'ZONE';
 //--SPARK-KEYWORD-LIST-END
 //============================
