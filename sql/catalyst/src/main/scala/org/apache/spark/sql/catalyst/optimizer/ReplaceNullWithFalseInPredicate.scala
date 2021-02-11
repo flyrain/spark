@@ -17,10 +17,9 @@
 
 package org.apache.spark.sql.catalyst.optimizer
 
-import org.apache.spark.sql.catalyst.expressions.{And, ArrayExists, ArrayFilter, CaseWhen, Expression, If}
-import org.apache.spark.sql.catalyst.expressions.{LambdaFunction, Literal, MapFilter, Or}
+import org.apache.spark.sql.catalyst.expressions.{And, ArrayExists, ArrayFilter, CaseWhen, Expression, If, LambdaFunction, Literal, MapFilter, Or}
 import org.apache.spark.sql.catalyst.expressions.Literal.FalseLiteral
-import org.apache.spark.sql.catalyst.plans.logical.{DeleteFromTable, Filter, Join, LogicalPlan, UpdateTable}
+import org.apache.spark.sql.catalyst.plans.logical.{DeleteAction, DeleteFromTable, Filter, InsertAction, Join, LogicalPlan, MergeAction, MergeIntoTable, UpdateAction, UpdateTable}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.types.BooleanType
 import org.apache.spark.util.Utils
@@ -55,6 +54,11 @@ object ReplaceNullWithFalseInPredicate extends Rule[LogicalPlan] {
     case j @ Join(_, _, _, Some(cond), _) => j.copy(condition = Some(replaceNullWithFalse(cond)))
     case d @ DeleteFromTable(_, Some(cond)) => d.copy(condition = Some(replaceNullWithFalse(cond)))
     case u @ UpdateTable(_, _, Some(cond)) => u.copy(condition = Some(replaceNullWithFalse(cond)))
+    case m @ MergeIntoTable(_, _, cond, matchedActions, notMatchedActions) =>
+      m.copy(
+        mergeCondition = replaceNullWithFalse(cond),
+        matchedActions = replaceNullWithFalse(matchedActions),
+        notMatchedActions = replaceNullWithFalse(notMatchedActions))
     case p: LogicalPlan => p transformExpressions {
       case i @ If(pred, _, _) => i.copy(predicate = replaceNullWithFalse(pred))
       case cw @ CaseWhen(branches, _) =>
@@ -108,5 +112,14 @@ object ReplaceNullWithFalseInPredicate extends Rule[LogicalPlan] {
         logWarning(message)
         e
       }
+  }
+
+  private def replaceNullWithFalse(mergeActions: Seq[MergeAction]): Seq[MergeAction] = {
+    mergeActions.map {
+      case u @ UpdateAction(Some(cond), _) => u.copy(condition = Some(replaceNullWithFalse(cond)))
+      case d @ DeleteAction(Some(cond)) => d.copy(condition = Some(replaceNullWithFalse(cond)))
+      case i @ InsertAction(Some(cond), _) => i.copy(condition = Some(replaceNullWithFalse(cond)))
+      case other => other
+    }
   }
 }
