@@ -162,6 +162,21 @@ object OverwritePartitionsDynamic {
   }
 }
 
+/**
+ * Replace data in an existing table.
+ */
+case class ReplaceData(
+    table: NamedRelation,
+    query: LogicalPlan,
+    write: Write) extends V2WriteCommand {
+
+  override def withNewQuery(newQuery: LogicalPlan): ReplaceData = copy(query = newQuery)
+  override def withNewTable(newTable: NamedRelation): ReplaceData = copy(table = newTable)
+
+  override def isByName: Boolean = {
+    throw new UnsupportedOperationException("ReplaceData must be constructed after resolution")
+  }
+}
 
 /** A trait used for logical plan nodes that create or replace V2 table definitions. */
 trait V2CreateTablePlan extends LogicalPlan {

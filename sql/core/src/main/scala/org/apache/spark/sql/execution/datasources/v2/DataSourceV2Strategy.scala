@@ -403,6 +403,9 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
         filterable,
         accumulator) :: Nil
 
+    case ReplaceData(r: DataSourceV2Relation, query, write) =>
+      ReplaceDataExec(r.table.asMergeable, planLater(query), refreshCache(r), write) :: Nil
+
     case _ => Nil
   }
 

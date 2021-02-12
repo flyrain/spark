@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, ResolvedPartitionSpec, UnresolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.connector.catalog.{MetadataColumn, SupportsAtomicPartitionManagement, SupportsDelete, SupportsPartitionManagement, SupportsRead, SupportsWrite, Table, TableCapability}
+import org.apache.spark.sql.connector.catalog.{MetadataColumn, SupportsAtomicPartitionManagement, SupportsDelete, SupportsMerge, SupportsPartitionManagement, SupportsRead, SupportsWrite, Table, TableCapability}
 import org.apache.spark.sql.types.{MetadataBuilder, StructField, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
@@ -54,6 +54,15 @@ object DataSourceV2Implicits {
           support
         case _ =>
           throw new AnalysisException(s"Table does not support deletes: ${table.name}")
+      }
+    }
+
+    def asMergeable: SupportsMerge = {
+      table match {
+        case support: SupportsMerge =>
+          support
+        case _ =>
+          throw new AnalysisException(s"Table does not support updates and deletes: ${table.name}")
       }
     }
 
