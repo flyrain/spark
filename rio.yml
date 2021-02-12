@@ -1,254 +1,303 @@
 schemaVersion: 2.0
+timeout: 90
 
 notify:
   email:
     enabled: false
+  pullRequestComment:
+    postOnSuccess: false
+    postOnFailure: false
 
 machine:
-  java:
-    version: 11-applejdk
+  baseImage: docker.apple.com/cpbuild7/applejdk-11
+  env: &base_env
+    NOLINT_ON_COMPILE: "1"
 
 builds:
   - name: apple-spark-2.12_3.1.1-snapshot-common
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "sketch/test" "kvstore/test" "network-common/test" "network-shuffle/test" "unsafe/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-common-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "sketch/test" "kvstore/test" "network-common/test" "network-shuffle/test" "unsafe/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-core
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "core/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-core-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "core/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-streaming
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "streaming/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-streaming-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "streaming/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-mllib
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "mllib/test" "mllib-local/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-mllib-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "mllib/test" "mllib-local/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-graphx
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "graphx/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-graphx-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "graphx/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-catalyst
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "catalyst/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-catalyst-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "catalyst/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-sql-1
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - yum install -y python3 # PythonUDFSuite
         - build/sbt -Phadoop-3.2 "sql/test" -Dtest.exclude.tags=org.apache.spark.tags.ExtendedSQLTest
 
+  - name: apple-spark-2.12_3.1.1-snapshot-sql-1-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - yum install -y python3 # PythonUDFSuite
+        - build/sbt -Phadoop-3.2 "sql/test" -Dtest.exclude.tags=org.apache.spark.tags.ExtendedSQLTest
+
   - name: apple-spark-2.12_3.1.1-snapshot-sql-2
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "sql/testOnly *.SQLQueryTestSuite"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-sql-2-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "sql/testOnly *.SQLQueryTestSuite"
+
   - name: apple-spark-2.12_3.1.1-snapshot-hadoop-cloud
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 -Phadoop-cloud "hadoop-cloud/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-hadoop-cloud-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 -Phadoop-cloud "hadoop-cloud/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-hive-1
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 -Phive "hive/test" -Dtest.exclude.tags=org.apache.spark.tags.ExtendedHiveTest
 
+  - name: apple-spark-2.12_3.1.1-snapshot-hive-1-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 -Phive "hive/test" -Dtest.exclude.tags=org.apache.spark.tags.ExtendedHiveTest
+
   - name: apple-spark-2.12_3.1.1-snapshot-hive-2
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 -Phive "hive/testOnly *.HiveExternalCatalogVersionsSuite" "hive/testOnly *.HiveSparkSubmitSuite" "hive/testOnly *.VersionsSuite" "hive/testOnly *.HiveDDLSuite" "hive/testOnly *.HiveCatalogedDDLSuite" "hive/testOnly *.Hive_2_1_DDLSuite" "hive/testOnly *.HiveSerDeSuite" "hive/testOnly *.HiveQuerySuite" "hive/testOnly *.SQLQuerySuite"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-hive-2-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 -Phive "hive/testOnly *.HiveExternalCatalogVersionsSuite" "hive/testOnly *.HiveSparkSubmitSuite" "hive/testOnly *.VersionsSuite" "hive/testOnly *.HiveDDLSuite" "hive/testOnly *.HiveCatalogedDDLSuite" "hive/testOnly *.Hive_2_1_DDLSuite" "hive/testOnly *.HiveSerDeSuite" "hive/testOnly *.HiveQuerySuite" "hive/testOnly *.SQLQuerySuite"
+
   - name: apple-spark-2.12_3.1.1-snapshot-hive-3
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 -Phive "hive/testOnly *.HiveCompatibilitySuite"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-hive-3-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 -Phive "hive/testOnly *.HiveCompatibilitySuite"
+
   - name: apple-spark-2.12_3.1.1-snapshot-launcher-repl-tools
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "launcher/test" "repl/test" "tools/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-launcher-repl-tools-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "launcher/test" "repl/test" "tools/test"
 
   - name: apple-spark-2.12_3.1.1-snapshot-hive-thriftserver
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "hive-thriftserver/test" -Phive -Phive-thriftserver
 
+  - name: apple-spark-2.12_3.1.1-snapshot-hive-thriftserver-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "hive-thriftserver/test" -Phive -Phive-thriftserver
+
   - name: apple-spark-2.12_3.1.1-snapshot-kafka
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "streaming-kafka-0-10/test" "sql-kafka-0-10/test" "token-provider-kafka-0-10/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-kafka-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "streaming-kafka-0-10/test" "sql-kafka-0-10/test" "token-provider-kafka-0-10/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-kinesis
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
+      steps:
+        - build/sbt -Phadoop-3.2 -Pkinesis-asl "streaming-kinesis-asl/test"
+
+  - name: apple-spark-2.12_3.1.1-snapshot-kinesis-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
       steps:
         - build/sbt -Phadoop-3.2 -Pkinesis-asl "streaming-kinesis-asl/test"
 
   - name: apple-spark-2.12_3.1.1-snapshot-avro
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 "avro/test" -Pavro
 
+  - name: apple-spark-2.12_3.1.1-snapshot-avro-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 "avro/test" -Pavro
+
   - name: apple-spark-2.12_3.1.1-snapshot-kinesis
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - build/sbt -Phadoop-3.2 -Pkinesis-asl "streaming-kinesis-asl/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-kinesis-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - build/sbt -Phadoop-3.2 -Pkinesis-asl "streaming-kinesis-asl/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-yarn-mesos-k8s
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
       steps:
         - yum install -y python3 # YarnClusterSuite needs python3
         - build/sbt -Phadoop-3.2 -Pyarn -Pmesos -Pkubernetes "yarn/test" "mesos/test" "kubernetes/test"
 
+  - name: apple-spark-2.12_3.1.1-snapshot-yarn-mesos-k8s-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
+      steps:
+        - yum install -y python3 # YarnClusterSuite needs python3
+        - build/sbt -Phadoop-3.2 -Pyarn -Pmesos -Pkubernetes "yarn/test" "mesos/test" "kubernetes/test"
+
   - name: apple-spark-2.12_3.1.1-snapshot-python36
     branchName: branch-3.1.1-apple
-    timeout: 90
-    machine:
-      baseImage: docker.apple.com/cpbuild7/applejdk-11
-      env:
-        NOLINT_ON_COMPILE: "1"
     build:
       template: freestyle:v4:build
+      steps:
+        - yum install -y python3
+        - pip3.6 install numpy==1.16.4 scipy==1.2.2 pandas==1.0.1
+        - build/sbt -Phadoop-3.2 test:package
+        - python/run-tests.py --python-executables python3.6
+
+  - name: apple-spark-2.12_3.1.1-snapshot-python36-pr
+    branchName: branch-3.1.1-apple
+    build:
+      template: freestyle:v4:prb
       steps:
         - yum install -y python3
         - pip3.6 install numpy==1.16.4 scipy==1.2.2 pandas==1.0.1
@@ -261,7 +310,7 @@ builds:
     machine:
       baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
-        NOLINT_ON_COMPILE: "1"
+        <<: *base_env
         SCALA_BINARY_VERSION: "2.12"
         SCALA_VERSION: "2.12.10"
         HADOOP_BINARY_VERSION: "3.2"
@@ -284,7 +333,7 @@ builds:
     machine:
       baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
-        NOLINT_ON_COMPILE: "1"
+        <<: *base_env
         SCALA_BINARY_VERSION: "2.12"
         SCALA_VERSION: "2.12.10"
         HADOOP_BINARY_VERSION: "3.2"
@@ -307,7 +356,7 @@ builds:
     machine:
       baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
-        NOLINT_ON_COMPILE: "1"
+        <<: *base_env
         SCALA_BINARY_VERSION: "2.12"
         SCALA_VERSION: "2.12.10"
         HADOOP_BINARY_VERSION: "3.2"
@@ -335,7 +384,7 @@ builds:
     machine:
       baseImage: docker.apple.com/cpbuild7/applejdk-8
       env:
-        NOLINT_ON_COMPILE: "1"
+        <<: *base_env
         SCALA_BINARY_VERSION: "2.12"
         SCALA_VERSION: "2.12.10"
         HADOOP_BINARY_VERSION: "3.2"
