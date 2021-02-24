@@ -32,7 +32,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.connector.catalog.{Identifier, StagedTable, StagingTableCatalog, SupportsMerge, SupportsWrite, Table, TableCatalog}
-import org.apache.spark.sql.connector.expressions.Transform
+import org.apache.spark.sql.connector.expressions.{SortOrder, Transform}
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, LogicalWriteInfoImpl, PhysicalWriteInfoImpl, V1Write, Write, WriteBuilder, WriterCommitMessage}
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -66,7 +66,9 @@ case class CreateTableAsSelectExec(
     query: SparkPlan,
     properties: Map[String, String],
     writeOptions: CaseInsensitiveStringMap,
-    ifNotExists: Boolean) extends TableWriteExecHelper {
+    ifNotExists: Boolean,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends TableWriteExecHelper {
 
   override protected def run(): Seq[InternalRow] = {
     if (catalog.tableExists(ident)) {
@@ -79,7 +81,8 @@ case class CreateTableAsSelectExec(
 
     val schema = CharVarcharUtils.getRawSchema(query.schema).asNullable
     val table = catalog.createTable(ident, schema,
-      partitioning.toArray, properties.asJava)
+      partitioning.toArray, properties.asJava,
+      distributionMode, ordering.toArray)
     writeToTable(catalog, table, writeOptions, ident)
   }
 }
@@ -101,7 +104,9 @@ case class AtomicCreateTableAsSelectExec(
     query: SparkPlan,
     properties: Map[String, String],
     writeOptions: CaseInsensitiveStringMap,
-    ifNotExists: Boolean) extends TableWriteExecHelper {
+    ifNotExists: Boolean,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends TableWriteExecHelper {
 
   override protected def run(): Seq[InternalRow] = {
     if (catalog.tableExists(ident)) {
@@ -113,7 +118,8 @@ case class AtomicCreateTableAsSelectExec(
     }
     val schema = CharVarcharUtils.getRawSchema(query.schema).asNullable
     val stagedTable = catalog.stageCreate(
-      ident, schema, partitioning.toArray, properties.asJava)
+      ident, schema, partitioning.toArray, properties.asJava,
+      distributionMode, ordering.toArray)
     writeToTable(catalog, stagedTable, writeOptions, ident)
   }
 }
@@ -137,7 +143,9 @@ case class ReplaceTableAsSelectExec(
     properties: Map[String, String],
     writeOptions: CaseInsensitiveStringMap,
     orCreate: Boolean,
-    invalidateCache: (TableCatalog, Table, Identifier) => Unit) extends TableWriteExecHelper {
+    invalidateCache: (TableCatalog, Table, Identifier) => Unit,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends TableWriteExecHelper {
 
   override protected def run(): Seq[InternalRow] = {
     // Note that this operation is potentially unsafe, but these are the strict semantics of
@@ -157,7 +165,7 @@ case class ReplaceTableAsSelectExec(
     }
     val schema = CharVarcharUtils.getRawSchema(query.schema).asNullable
     val table = catalog.createTable(
-      ident, schema, partitioning.toArray, properties.asJava)
+      ident, schema, partitioning.toArray, properties.asJava, distributionMode, ordering.toArray)
     writeToTable(catalog, table, writeOptions, ident)
   }
 }
@@ -183,7 +191,9 @@ case class AtomicReplaceTableAsSelectExec(
     properties: Map[String, String],
     writeOptions: CaseInsensitiveStringMap,
     orCreate: Boolean,
-    invalidateCache: (TableCatalog, Table, Identifier) => Unit) extends TableWriteExecHelper {
+    invalidateCache: (TableCatalog, Table, Identifier) => Unit,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends TableWriteExecHelper {
 
   override protected def run(): Seq[InternalRow] = {
     val schema = CharVarcharUtils.getRawSchema(query.schema).asNullable
@@ -193,11 +203,13 @@ case class AtomicReplaceTableAsSelectExec(
     }
     val staged = if (orCreate) {
       catalog.stageCreateOrReplace(
-        ident, schema, partitioning.toArray, properties.asJava)
+        ident, schema, partitioning.toArray, properties.asJava,
+        distributionMode, ordering.toArray)
     } else if (catalog.tableExists(ident)) {
       try {
         catalog.stageReplace(
-          ident, schema, partitioning.toArray, properties.asJava)
+          ident, schema, partitioning.toArray, properties.asJava,
+          distributionMode, ordering.toArray)
       } catch {
         case e: NoSuchTableException =>
           throw new CannotReplaceMissingTableException(ident, Some(e))

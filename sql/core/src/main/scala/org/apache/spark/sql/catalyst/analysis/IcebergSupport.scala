@@ -18,6 +18,7 @@
 package org.apache.spark.sql.catalyst.analysis
 
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 trait IcebergSupport {
@@ -32,6 +33,21 @@ trait IcebergSupport {
       case s: SubqueryAlias => isIcebergRelation(s.child)
       case r: DataSourceV2Relation => isIcebergTable(r)
       case _ => false
+    }
+  }
+
+  protected def isIcebergTable(
+      catalog: TableCatalog,
+      props: Map[String, String]): Boolean = {
+
+    catalog match {
+      case _: org.apache.iceberg.spark.SparkCatalog =>
+        true
+      case icebergSessionCatalog: org.apache.iceberg.spark.SparkSessionCatalog[_] =>
+        val provider = props.getOrElse(TableCatalog.PROP_PROVIDER, "iceberg")
+        icebergSessionCatalog.useIceberg(provider)
+      case _ =>
+        false
     }
   }
 }

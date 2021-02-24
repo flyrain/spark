@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.analysis.{AnalysisTest, Analyzer, EmptyFunc
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, CatalogTable, CatalogTableType, InMemoryCatalog, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, EqualTo, Expression, InSubquery, IntegerLiteral, ListQuery, StringLiteral}
 import org.apache.spark.sql.catalyst.parser.{CatalystSqlParser, ParseException}
-import org.apache.spark.sql.catalyst.plans.logical.{AlterTable, AppendData, Assignment, CreateTableAsSelect, CreateTableStatement, CreateV2Table, DeleteAction, DeleteFromTable, DescribeRelation, DropTable, InsertAction, LocalRelation, LogicalPlan, MergeIntoTable, OneRowRelation, Project, ShowTableProperties, SubqueryAlias, UpdateAction, UpdateTable}
+import org.apache.spark.sql.catalyst.plans.logical.{AlterTable, AppendData, Assignment, CreateTableAsSelect, CreateTableStatement, CreateV2Table, DeleteAction, DeleteFromTable, DescribeRelation, DropTable, InsertAction, LocalRelation, LogicalPlan, MergeIntoTable, OneRowRelation, Project, ReplaceTable, ReplaceTableAsSelect, ShowTableProperties, SubqueryAlias, UpdateAction, UpdateTable}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.FakeV2Provider
 import org.apache.spark.sql.connector.catalog.{CatalogManager, CatalogNotFoundException, Identifier, Table, TableCapability, TableCatalog, TableChange, V1Table}
@@ -2280,6 +2280,274 @@ class PlanResolutionSuite extends AnalysisTest {
       parseAndResolve("ALTER TABLE v1Table DROP PARTITION FIELD bucket(8, s)")
     }
     assert(e2.message.contains("Cannot drop partition fields from v1 tables"))
+  }
+
+  test("v2 table creation (global ordering)") {
+    val sql =
+      s"""
+         |CREATE TABLE IF NOT EXISTS mydb.table_name (
+         |    id bigint,
+         |    description string,
+         |    point struct<x: double, y: double>)
+         |USING parquet
+         |ORDERED BY id
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+      """.stripMargin
+
+    val expectedProperties = Map(
+      "p1" -> "v1",
+      "p2" -> "v2",
+      "provider" -> "parquet")
+
+    val expectedOrdering = Seq(
+      sort(identity(FieldReference("id")), ASCENDING, NULLS_FIRST)
+    )
+
+    parseAndResolve(sql, withDefault = true) match {
+      case create: CreateV2Table =>
+        assert(create.catalog.name == "testcat")
+        assert(create.tableName == Identifier.of(Array("mydb"), "table_name"))
+        assert(create.tableSchema == new StructType()
+          .add("id", LongType)
+          .add("description", StringType)
+          .add("point", new StructType().add("x", DoubleType).add("y", DoubleType)))
+        assert(create.partitioning.isEmpty)
+        assert(create.distributionMode == "range")
+        assert(create.ordering == expectedOrdering)
+        assert(create.properties == expectedProperties)
+        assert(create.ignoreIfExists)
+
+      case other =>
+        fail(s"Expected ${classOf[CreateV2Table].getName} but got ${other.getClass.getName}: $sql")
+    }
+  }
+
+  test("v2 table creation (hash distribution + local ordering)") {
+    val sql =
+      s"""
+         |CREATE TABLE IF NOT EXISTS mydb.table_name (
+         |    id bigint,
+         |    description string,
+         |    point struct<x: double, y: double>)
+         |USING parquet
+         |PARTITIONED BY (bucket(8, description))
+         |DISTRIBUTED BY PARTITION
+         |ORDERED BY id
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+      """.stripMargin
+
+    val expectedProperties = Map(
+      "p1" -> "v1",
+      "p2" -> "v2",
+      "provider" -> "parquet")
+
+    val expectedPartitioning = Seq(
+      bucket(8, Array(FieldReference("description")))
+    )
+
+    val expectedOrdering = Seq(
+      sort(identity(FieldReference("id")), ASCENDING, NULLS_FIRST)
+    )
+
+    parseAndResolve(sql, withDefault = true) match {
+      case create: CreateV2Table =>
+        assert(create.catalog.name == "testcat")
+        assert(create.tableName == Identifier.of(Array("mydb"), "table_name"))
+        assert(create.tableSchema == new StructType()
+          .add("id", LongType)
+          .add("description", StringType)
+          .add("point", new StructType().add("x", DoubleType).add("y", DoubleType)))
+        assert(create.partitioning == expectedPartitioning)
+        assert(create.distributionMode == "hash")
+        assert(create.ordering == expectedOrdering)
+        assert(create.properties == expectedProperties)
+        assert(create.ignoreIfExists)
+
+      case other =>
+        fail(s"Expected ${classOf[CreateV2Table].getName} but got ${other.getClass.getName}: $sql")
+    }
+  }
+
+  test("v2 table creation (local ordering)") {
+    val sql =
+      s"""
+         |CREATE TABLE IF NOT EXISTS mydb.table_name (
+         |    id bigint,
+         |    description string,
+         |    point struct<x: double, y: double>)
+         |USING parquet
+         |PARTITIONED BY (bucket(8, description))
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         |LOCALLY ORDERED BY (id)
+      """.stripMargin
+
+    val expectedProperties = Map(
+      "p1" -> "v1",
+      "p2" -> "v2",
+      "provider" -> "parquet")
+
+    val expectedPartitioning = Seq(
+      bucket(8, Array(FieldReference("description")))
+    )
+
+    val expectedOrdering = Seq(
+      sort(identity(FieldReference("id")), ASCENDING, NULLS_FIRST)
+    )
+
+    parseAndResolve(sql, withDefault = true) match {
+      case create: CreateV2Table =>
+        assert(create.catalog.name == "testcat")
+        assert(create.tableName == Identifier.of(Array("mydb"), "table_name"))
+        assert(create.tableSchema == new StructType()
+          .add("id", LongType)
+          .add("description", StringType)
+          .add("point", new StructType().add("x", DoubleType).add("y", DoubleType)))
+        assert(create.partitioning == expectedPartitioning)
+        assert(create.distributionMode == "none")
+        assert(create.ordering == expectedOrdering)
+        assert(create.properties == expectedProperties)
+        assert(create.ignoreIfExists)
+
+      case other =>
+        fail(s"Expected ${classOf[CreateV2Table].getName} but got ${other.getClass.getName}: $sql")
+    }
+  }
+
+  test("v2 CTAS with no distribution and ordering") {
+    val sql =
+      s"""
+         |CREATE TABLE IF NOT EXISTS testcat.mydb.table_name
+         |USING parquet
+         |COMMENT 'table comment'
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         |OPTIONS (path 's3://bucket/path/to/data', other 20)
+         |UNORDERED
+         |AS SELECT * FROM src
+      """.stripMargin
+
+    val expectedProperties = Map(
+      "p1" -> "v1",
+      "p2" -> "v2",
+      "option.other" -> "20",
+      "provider" -> "parquet",
+      "location" -> "s3://bucket/path/to/data",
+      "comment" -> "table comment",
+      "other" -> "20")
+
+    parseAndResolve(sql) match {
+      case ctas: CreateTableAsSelect =>
+        assert(ctas.catalog.name == "testcat")
+        assert(ctas.tableName == Identifier.of(Array("mydb"), "table_name"))
+        assert(ctas.properties == expectedProperties)
+        assert(ctas.writeOptions.isEmpty)
+        assert(ctas.partitioning.isEmpty)
+        assert(ctas.distributionMode == "none")
+        assert(ctas.ordering.isEmpty)
+        assert(ctas.ignoreIfExists)
+
+      case other =>
+        fail(s"Expected ${classOf[CreateTableAsSelect].getName} " +
+            s"but got ${other.getClass.getName}: $sql")
+    }
+  }
+
+  test("v2 table creation (invalid hash distribution)") {
+    val sql =
+      s"""
+         |CREATE TABLE testcat.tab (i INT, s STRING)
+         |USING $v2Format
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         |DISTRIBUTED BY PARTITION
+         |AS SELECT * FROM src
+      """.stripMargin
+
+    val e = intercept[AnalysisException] {
+      parseAndResolve(sql)
+    }
+    assert(e.getMessage.contains("is supported only for partitioned tables"))
+  }
+
+
+  test("v2 replace table (global ordering)") {
+    val sql =
+      s"""
+         |REPLACE TABLE testcat.tab (i INT, s STRING)
+         |USING $v2Format
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         |ORDERED BY (bucket(8, s) DESC NULLS FIRST)
+      """.stripMargin
+
+    val expectedProperties = Map(
+      "p1" -> "v1",
+      "p2" -> "v2",
+      "provider" -> v2Format)
+
+    val expectedOrdering = Seq(
+      sort(bucket(8, Array(FieldReference("s"))), DESCENDING, NULLS_FIRST)
+    )
+
+    parseAndResolve(sql) match {
+      case replace: ReplaceTable =>
+        assert(replace.catalog.name == "testcat")
+        assert(replace.tableName == Identifier.of(Array.empty, "tab"))
+        assert(replace.properties == expectedProperties)
+        assert(replace.partitioning.isEmpty)
+        assert(replace.distributionMode == "range")
+        assert(replace.ordering == expectedOrdering)
+
+      case other =>
+        fail(s"Expected ${classOf[ReplaceTable].getName} but got ${other.getClass.getName}: $sql")
+    }
+  }
+
+  test("v2 RTAS (global ordering)") {
+    val sql =
+      s"""
+         |REPLACE TABLE testcat.tab
+         |USING $v2Format
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         |ORDERED BY (bucket(8, s) DESC NULLS FIRST)
+         |AS SELECT * FROM src
+      """.stripMargin
+
+    val expectedProperties = Map(
+      "p1" -> "v1",
+      "p2" -> "v2",
+      "provider" -> v2Format)
+
+    val expectedOrdering = Seq(
+      sort(bucket(8, Array(FieldReference("s"))), DESCENDING, NULLS_FIRST)
+    )
+
+    parseAndResolve(sql) match {
+      case rtas: ReplaceTableAsSelect =>
+        assert(rtas.catalog.name == "testcat")
+        assert(rtas.tableName == Identifier.of(Array.empty, "tab"))
+        assert(rtas.properties == expectedProperties)
+        assert(rtas.partitioning.isEmpty)
+        assert(rtas.distributionMode == "range")
+        assert(rtas.ordering == expectedOrdering)
+
+      case other =>
+        fail(s"Expected ${classOf[ReplaceTableAsSelect].getName} " +
+            s"but got ${other.getClass.getName}: $sql")
+    }
+  }
+
+  test("v2 RTAS (invalid hash distribution)") {
+    val sql =
+      s"""
+         |REPLACE TABLE testcat.tab (i INT, s STRING)
+         |USING $v2Format
+         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         |DISTRIBUTED BY PARTITION
+         |AS SELECT * FROM src
+      """.stripMargin
+
+      val e = intercept[AnalysisException] {
+        parseAndResolve(sql)
+      }
+      assert(e.getMessage.contains("is supported only for partitioned tables"))
   }
 
   // TODO: add tests for more commands.

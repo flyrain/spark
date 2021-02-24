@@ -481,7 +481,9 @@ class WriteDistributionAndOrderingSuite
       writeTransform: DataFrame => DataFrame = df => df,
       writeCommand: String = "append"): Unit = {
 
-    catalog.createTable(ident, schema, Array.empty, emptyProps, tableDistribution, tableOrdering)
+    catalog.createTableWithDistributionAndOrdering(
+      ident, schema, Array.empty, emptyProps,
+      tableDistribution, tableOrdering)
 
     val df = spark.createDataFrame(Seq((1, "a"), (2, "b"), (3, "c"))).toDF("id", "data")
     val writer = writeTransform(df).writeTo(tableNameAsString)
