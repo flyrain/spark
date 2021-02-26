@@ -1,0 +1,97 @@
+This contains the changes after branching `v3.1.1`
+
+# From Spark 3.2.0
+SPARK-33295     Upgrade ORC to 1.6.6
+SPARK-33750     Use `hadoop-3.2` distribution in HiveExternalCatalogVersionsSuite
+SPARK-33724     Add decom script as a configuration param
+SPARK-33261     Add a developer API for custom feature steps
+SPARK-33722     Handle DELETE in ReplaceNullWithFalseInPredicate
+SPARK-33735     Handle UPDATE in ReplaceNullWithFalseInPredicate
+SPARK-33779     DataSource V2: API to request distribution and ordering on write
+SPARK-33779     Fix Java Linter error
+SPARK-33806     limit partition num to 1 when distributing by foldable expressions
+SPARK-33806     Fold RepartitionExpression num partition should check if partition expression is empty
+SPARK-33700     Avoid file meta reading when enableFilterPushDown is true and filters is empty for Orc
+SPARK-23862     Support Java enums from Scala Dataset API
+SPARK-33870     Enable spark.storage.replication.proactive by default
+SPARK-33978     Support ZSTD compression in ORC data source
+SPARK-33808     DataSource V2: Build logical writes in the optimizer
+SPARK-34049     DataSource V2: Use Write abstraction in StreamExecution
+SPARK-34142     Support Fallback Storage Cleanup during stopping SparkContext
+SPARK-34208     Upgrade ORC to 1.6.7
+SPARK-34206     Make Guava Cache as ExecutorPodsLifecycleManager private field
+SPARK-34316     Support spark.kubernetes.executor.disableConfigMap
+SPARK-34340     Support ZSTD JNI BufferPool
+SPARK-34323     Upgrade zstd-jni to 1.4.8-3
+SPARK-34387     Add ZStandardBenchmark
+SPARK-34390     Enable Zstandard buffer pool by default
+SPARK-34391     Upgrade commons-io to 2.8.0
+SPARK-34026     Inject repartition and sort nodes to satisfy required distribution and ordering
+SPARK-33736     Handle MERGE in ReplaceNullWithFalseInPredicate
+SPARK-34428     Update sbt version to 1.4.7
+SPARK-34467     Upgrade Zstd-jni to 1.4.8-4
+SPARK-34496     Upgrade ZSTD-JNI to 1.4.8-5 for better API compatibility
+SPARK-34559     Upgrade to ZSTD JNI 1.4.8-6
+SPARK-34486     Upgrade kubernetes-client to 4.13.2
+
+# From Spark 3.1.2
+MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
+SPARK-34473     Avoid NPE in DataFrameReader.schema(StructType)
+MINOR           Fix the comment for CalendarIntervalType about comparability
+MINOR           Replace http to https when possible in PySpark documentation
+SPARK-34490     Analysis should fail if the view refers a dropped table
+SPARK-34508     Skip HiveExternalCatalogVersionsSuite if network is down
+MINOR           Use hadoop-aws 3.2.0 in K8s example
+SPARK-34515     Fix NPE if InSet contains null value during getPartitionsByFilter
+SPARK-34497     Fix built-in JDBC connection providers to restore JVM security context changes
+SPARK-34531     Remove Experimental API tag in PrometheusServlet
+SPARK-34436     DPP support LIKE ANY/ALL expression
+SPARK-34543     Respect the `spark.sql.caseSensitive` config while resolving partition spec in v1 `SET LOCATION`
+SPARK-34551     Fix credit related scripts to recover, drop Python 2 and work with Python 3
+SPARK-34550     Skip InSet null value during push filter to Hive metastore
+SPARK-34392     Support ZoneOffset +h:mm in DateTimeUtils. getZoneId
+
+# Internal Patches
+SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
+rdar://64257964 Add back http support so it works without hadoop configuration
+rdar://66018002 Native libs in Hadoop
+rdar://66576657 Add spark-avro to the tgz build to simplify kernels
+rdar://68926116 Add alternative conf name `spark.FsUrlStreamHandlerFactory.enabled`
+rdar://70562690 Update kubernetes Dockerfile in Apple Spark to AppleJDK
+rdar://71819374 Bridge in LZO codec family
+rdar://68238603 Support disable AJAX call on Stage Page
+rdar://71465483 Add S3A I/O metrics to Prometheus
+rdar://72550481 Enable spark.executor.processTreeMetrics.enabled by default
+rdar://72552554 Increase DEFAULT_MAX_CONSECUTIVE_STAGE_ATTEMPTS from 4 to 6
+rdar://72735876 Enable spark.metrics.appStatusSource.enabled by default
+MINOR           Upgrade to Hive 2.3.8.1-apple
+MINOR           Add JDK11 options
+MINOR           Add rio.yml and dev scripts
+MINOR           Adjust test cases for RIO
+MINOR           Support JarvisSparkHadoopUtil
+MINOR           Added bindAddress in Mesos Executor Backend for now set to local host name
+MINOR           Use abstract storage as a replacement for window.localStorage
+MINOR           Use Utils.localHostName() for bindAddress
+MINOR           Integrate ACI spark call home service listener
+MINOR           SparkUI patch
+MINOR           Add connector row-level APIs
+MINOR           Add stored procedure API
+MINOR           Disable SQL AQE in production environments
+MINOR           Adds Migrate and Snapshot Catalog Support
+MINOR           Build distribution with JDK8
+MINOR           Parquet encryption support via switch to parquet-1.10.1.3-apple
+rdar://74077552 Upgrade Parquet to 1.10.1.4 (PARQUET-1967/PARQUET-1973)
+rdar://74249791 ALTER TABLE ... WRITE command
+rdar://70004937 Add dynamic file filtering nodes
+MINOR           Fix compilation error in AvroSuite
+rdar://74251620 Add support for partition evolution
+rdar://70004937 Add plans for replacing data
+MINOR           trigger build job for pull requests
+MINOR           Add Iceberg as a dep
+rdar://70004937 Rewrite row-level operations for Iceberg
+MINOR           Move to released Iceberg
+rdar://72811621 Control distribution and ordering during table creation
+MINOR           Upgrade Parquet to 1.10.1.6-apple to match zstd-jni
+MINOR           Add zstd-jni test dependency to avro module
+MINOR           Upgrade Parquet to 1.10.1.7-apple to match zstd-jni
+MINOR           Use zstd as default compression codec
