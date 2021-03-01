@@ -50,6 +50,7 @@ SPARK-34543     Respect the `spark.sql.caseSensitive` config while resolving par
 SPARK-34551     Fix credit related scripts to recover, drop Python 2 and work with Python 3
 SPARK-34550     Skip InSet null value during push filter to Hive metastore
 SPARK-34392     Support ZoneOffset +h:mm in DateTimeUtils. getZoneId
+SPARK-34556     Checking duplicate static partition columns should respect case sensitive conf
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
