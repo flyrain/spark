@@ -161,6 +161,7 @@ builds:
     build:
       template: freestyle:v4:build
       steps:
+        - yum install -y python3
         - build/sbt -Phadoop-3.2 -Phive "hive/testOnly *.HiveExternalCatalogVersionsSuite" "hive/testOnly *.HiveSparkSubmitSuite" "hive/testOnly *.VersionsSuite" "hive/testOnly *.HiveDDLSuite" "hive/testOnly *.HiveCatalogedDDLSuite" "hive/testOnly *.Hive_2_1_DDLSuite" "hive/testOnly *.HiveSerDeSuite" "hive/testOnly *.HiveQuerySuite" "hive/testOnly *.SQLQuerySuite"
 
   - name: apple-spark-2.12_3.1.1-snapshot-hive-2-pr
@@ -168,6 +169,7 @@ builds:
     build:
       template: freestyle:v4:prb
       steps:
+        - yum install -y python3
         - build/sbt -Phadoop-3.2 -Phive "hive/testOnly *.HiveExternalCatalogVersionsSuite" "hive/testOnly *.HiveSparkSubmitSuite" "hive/testOnly *.VersionsSuite" "hive/testOnly *.HiveDDLSuite" "hive/testOnly *.HiveCatalogedDDLSuite" "hive/testOnly *.Hive_2_1_DDLSuite" "hive/testOnly *.HiveSerDeSuite" "hive/testOnly *.HiveQuerySuite" "hive/testOnly *.SQLQuerySuite"
 
   - name: apple-spark-2.12_3.1.1-snapshot-hive-3
