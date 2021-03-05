@@ -2298,7 +2298,7 @@ abstract class DDLSuite extends QueryTest with SQLTestUtils {
         sql("SHOW COLUMNS IN tbl FROM a.b.c")
       }.getMessage
       assert(message.contains(
-        "Table or view not found: a.b.c.tbl"))
+        "Table or view not found"))
     }
   }
 
