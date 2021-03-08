@@ -33,6 +33,7 @@ SPARK-34467     Upgrade Zstd-jni to 1.4.8-4
 SPARK-34496     Upgrade ZSTD-JNI to 1.4.8-5 for better API compatibility
 SPARK-34559     Upgrade to ZSTD JNI 1.4.8-6
 SPARK-34486     Upgrade kubernetes-client to 4.13.2
+SPARK-34650     Exclude zstd-jni transitive dependency from Kafka Client
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -51,6 +52,28 @@ SPARK-34551     Fix credit related scripts to recover, drop Python 2 and work wi
 SPARK-34550     Skip InSet null value during push filter to Hive metastore
 SPARK-34392     Support ZoneOffset +h:mm in DateTimeUtils. getZoneId
 SPARK-34556     Checking duplicate static partition columns should respect case sensitive conf
+SPARK-34660     Don't use ParVector with `withExistingConf` which is not thread-safe
+SPARK-34642     Fix TypeError in Pyspark Linear Regression docs
+SPARK-34643     Use CRAN URL in canonical form
+SPARK-34607     Add `Utils.isMemberClass` to fix a malformed class name error on jdk8u
+SPARK-34596     Use Utils.getSimpleName to avoid hitting Malformed class name in NewInstance.doGenCode
+SPARK-34613     Fix view does not capture disable hint config
+SPARK-32924     Make duration column in master UI sorted in the correct order
+SPARK-34482     Correct the active SparkSession for StreamExecution.logicalPlan
+SPARK-34567     CreateTableAsSelect should update metrics too
+SPARK-34599     Fix the issue that INSERT INTO OVERWRITE doesn't support partition columns containing dot for DSv2
+SPARK-34209     Delegate table name validation to the session catalog
+SPARK-34577     Fix drop/add columns to a dataset of `DESCRIBE NAMESPACE`
+SPARK-34584     Static partition should also follow StoreAssignmentPolicy when insert into v2 tables
+SPARK-34610     Fix Python UDF used in GroupedAggPandasUDFTests
+SPARK-34604     Use eventually in TaskContextTestsWithWorkerReuse.test_task_context_correct_with_python_worker_reuse
+SPARK-34555     Resolve metadata output from DataFrame
+MINOR           Fix some wrong default values in SQL tuning guide's AQE section
+SPARK-34534     Fix blockIds order when use FetchShuffleBlocks to fetch blocks
+SPARK-34361     In case of downscaling avoid killing of executors already known by the scheduler backend in the pod allocator
+SPARK-34547     Only use metadata columns for resolution as last resort
+SPARK-34417     org.apache.spark.sql.DataFrameNaFunctions.fillMap fails for column name having a dot
+SPARK-34561     Fix drop/add columns from/to a dataset of v2 `DESCRIBE TABLE`
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -96,3 +119,5 @@ MINOR           Upgrade Parquet to 1.10.1.6-apple to match zstd-jni
 MINOR           Add zstd-jni test dependency to avro module
 MINOR           Upgrade Parquet to 1.10.1.7-apple to match zstd-jni
 MINOR           Use zstd as default compression codec
+MINOR           Upgrade ZSTD-JNI to 1.4.8-7
+MINOR           Upgrade Parquet to 1.10.1.8-apple
