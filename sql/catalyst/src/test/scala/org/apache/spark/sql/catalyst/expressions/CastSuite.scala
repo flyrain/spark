@@ -961,8 +961,8 @@ abstract class AnsiCastSuiteBase extends CastSuiteBase {
   }
 
   test("ANSI mode: cast string to timestamp with parse error") {
-    val activeConf = conf.clone()
-    new ParVector(ALL_TIMEZONES.toVector).foreach { zid =>
+    val activeConf = conf
+    ALL_TIMEZONES.foreach { zid =>
       def checkCastWithParseError(str: String): Unit = {
         checkExceptionInExpression[DateTimeException](
           cast(Literal(str), TimestampType, Option(zid.getId)),
