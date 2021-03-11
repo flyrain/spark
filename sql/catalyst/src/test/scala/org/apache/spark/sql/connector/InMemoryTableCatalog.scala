@@ -70,13 +70,10 @@ class BasicInMemoryTableCatalog extends TableCatalog {
       schema: StructType,
       partitions: Array[Transform],
       properties: util.Map[String, String]): Table = {
-
-    createTableWithDistributionAndOrdering(
-      ident, schema, partitions, properties,
-      Distributions.unspecified(), Array.empty)
+    createTable(ident, schema, partitions, properties, Distributions.unspecified(), Array.empty)
   }
 
-  def createTableWithDistributionAndOrdering(
+  def createTable(
       ident: Identifier,
       schema: StructType,
       partitions: Array[Transform],

@@ -194,7 +194,7 @@
     <selenium.version>3.141.59</selenium.version>
     <htmlunit.version>2.40.0</htmlunit.version>
     <acispark.callhome.version>0.2.0</acispark.callhome.version>
-    <iceberg.version>0.12.0-apple-preview-2-SNAPSHOT</iceberg.version>
+    <iceberg.version>0.12.0-apple-preview</iceberg.version>
     <!--
     Managed up from older version from Avro; sync with jackson-module-paranamer dependency version
     -->
@@ -293,10 +293,6 @@
     <repository>
       <id>apple</id>
       <url>https://artifacts.apple.com/libs-release</url>
-    </repository>
-    <repository>
-      <id>apple-snapshot</id>
-      <url>https://artifacts.apple.com/libs-snapshot</url>
     </repository>
   </repositories>
   <pluginRepositories>

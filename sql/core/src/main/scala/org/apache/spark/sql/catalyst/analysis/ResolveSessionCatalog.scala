@@ -296,7 +296,7 @@ class ResolveSessionCatalog(
     // For CREATE TABLE [AS SELECT], we should use the v1 command if the catalog is resolved to the
     // session catalog and the table provider is not v2.
     case c @ CreateTableStatement(
-         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _, _) =>
+         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _) =>
       assertNoNullTypeInSchema(c.tableSchema)
       val (storageFormat, provider) = getStorageFormatAndProvider(
         c.provider, c.options, c.location, c.serde, ctas = false)
@@ -314,13 +314,11 @@ class ResolveSessionCatalog(
           // convert the bucket spec and add it as a transform
           c.partitioning ++ c.bucketSpec.map(_.asTransform),
           convertTableProperties(c),
-          ignoreIfExists = c.ifNotExists,
-          c.distributionMode,
-          c.ordering)
+          ignoreIfExists = c.ifNotExists)
       }
 
     case c @ CreateTableAsSelectStatement(
-         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _, _, _) =>
+         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _) =>
       if (c.asSelect.resolved) {
         assertNoNullTypeInSchema(c.asSelect.schema)
       }
@@ -341,9 +339,7 @@ class ResolveSessionCatalog(
           c.asSelect,
           convertTableProperties(c),
           writeOptions = c.writeOptions,
-          ignoreIfExists = c.ifNotExists,
-          c.distributionMode,
-          c.ordering)
+          ignoreIfExists = c.ifNotExists)
       }
 
     case m @ MigrateTableStatement(SessionCatalogAndTable(catalog, tbl), _, _) =>
@@ -380,7 +376,7 @@ class ResolveSessionCatalog(
     // For REPLACE TABLE [AS SELECT], we should fail if the catalog is resolved to the
     // session catalog and the table provider is not v2.
     case c @ ReplaceTableStatement(
-         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _) =>
+         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _) =>
       assertNoNullTypeInSchema(c.tableSchema)
       val provider = c.provider.getOrElse(conf.defaultDataSourceName)
       if (!isV2Provider(provider)) {
@@ -393,13 +389,11 @@ class ResolveSessionCatalog(
           // convert the bucket spec and add it as a transform
           c.partitioning ++ c.bucketSpec.map(_.asTransform),
           convertTableProperties(c),
-          orCreate = c.orCreate,
-          distributionMode = c.distributionMode,
-          ordering = c.ordering)
+          orCreate = c.orCreate)
       }
 
     case c @ ReplaceTableAsSelectStatement(
-         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _, _) =>
+         SessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _) =>
       if (c.asSelect.resolved) {
         assertNoNullTypeInSchema(c.asSelect.schema)
       }
@@ -415,9 +409,7 @@ class ResolveSessionCatalog(
           c.asSelect,
           convertTableProperties(c),
           writeOptions = c.writeOptions,
-          orCreate = c.orCreate,
-          distributionMode = c.distributionMode,
-          ordering = c.ordering)
+          orCreate = c.orCreate)
       }
 
     case DropTable(ResolvedV1TableIdentifier(ident), ifExists, purge) =>

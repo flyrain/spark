@@ -155,7 +155,7 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
       RenameTable(catalog.asTableCatalog, oldName.asIdentifier, newNameParts.asIdentifier)
 
     case c @ CreateTableStatement(
-         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _, _) =>
+         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _) =>
       assertNoNullTypeInSchema(c.tableSchema)
       CreateV2Table(
         catalog.asTableCatalog,
@@ -164,12 +164,10 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         // convert the bucket spec and add it as a transform
         c.partitioning ++ c.bucketSpec.map(_.asTransform),
         convertTableProperties(c),
-        ignoreIfExists = c.ifNotExists,
-        c.distributionMode,
-        c.ordering)
+        ignoreIfExists = c.ifNotExists)
 
     case c @ CreateTableAsSelectStatement(
-         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _, _, _) =>
+         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _) =>
       if (c.asSelect.resolved) {
         assertNoNullTypeInSchema(c.asSelect.schema)
       }
@@ -181,9 +179,7 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         c.asSelect,
         convertTableProperties(c),
         writeOptions = c.writeOptions,
-        ignoreIfExists = c.ifNotExists,
-        c.distributionMode,
-        c.ordering)
+        ignoreIfExists = c.ifNotExists)
 
     case m @ MigrateTableStatement(NonSessionCatalogAndTable(catalog, tbl), _, _) =>
       if (!catalog.isInstanceOf[SupportsMigrate]) {
@@ -211,7 +207,7 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         )
 
     case c @ ReplaceTableStatement(
-         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _) =>
+         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _) =>
       assertNoNullTypeInSchema(c.tableSchema)
       ReplaceTable(
         catalog.asTableCatalog,
@@ -220,12 +216,10 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         // convert the bucket spec and add it as a transform
         c.partitioning ++ c.bucketSpec.map(_.asTransform),
         convertTableProperties(c),
-        orCreate = c.orCreate,
-        distributionMode = c.distributionMode,
-        ordering = c.ordering)
+        orCreate = c.orCreate)
 
     case c @ ReplaceTableAsSelectStatement(
-         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _, _, _) =>
+         NonSessionCatalogAndTable(catalog, tbl), _, _, _, _, _, _, _, _, _, _, _) =>
       if (c.asSelect.resolved) {
         assertNoNullTypeInSchema(c.asSelect.schema)
       }
@@ -237,9 +231,7 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         c.asSelect,
         convertTableProperties(c),
         writeOptions = c.writeOptions,
-        orCreate = c.orCreate,
-        distributionMode = c.distributionMode,
-        ordering = c.ordering)
+        orCreate = c.orCreate)
 
     case DropViewStatement(NonSessionCatalogAndTable(catalog, viewName), _) =>
       throw new AnalysisException(

@@ -145,9 +145,7 @@ case class CreateTableStatement(
     comment: Option[String],
     serde: Option[SerdeInfo],
     external: Boolean,
-    ifNotExists: Boolean,
-    distributionMode: String = "none",
-    ordering: Seq[SortOrder] = Seq.empty) extends ParsedStatement
+    ifNotExists: Boolean) extends ParsedStatement
 
 /**
  * A CREATE TABLE AS SELECT command, as parsed from SQL.
@@ -165,9 +163,7 @@ case class CreateTableAsSelectStatement(
     writeOptions: Map[String, String],
     serde: Option[SerdeInfo],
     external: Boolean,
-    ifNotExists: Boolean,
-    distributionMode: String = "none",
-    ordering: Seq[SortOrder] = Seq.empty) extends ParsedStatement {
+    ifNotExists: Boolean) extends ParsedStatement {
 
   override def children: Seq[LogicalPlan] = Seq(asSelect)
 }
@@ -203,9 +199,7 @@ case class ReplaceTableStatement(
     location: Option[String],
     comment: Option[String],
     serde: Option[SerdeInfo],
-    orCreate: Boolean,
-    distributionMode: String = "none",
-    ordering: Seq[SortOrder] = Seq.empty) extends ParsedStatement
+    orCreate: Boolean) extends ParsedStatement
 
 /**
  * A REPLACE TABLE AS SELECT command, as parsed from SQL.
@@ -222,9 +216,7 @@ case class ReplaceTableAsSelectStatement(
     comment: Option[String],
     writeOptions: Map[String, String],
     serde: Option[SerdeInfo],
-    orCreate: Boolean,
-    distributionMode: String = "none",
-    ordering: Seq[SortOrder] = Seq.empty) extends ParsedStatement {
+    orCreate: Boolean) extends ParsedStatement {
 
   override def children: Seq[LogicalPlan] = Seq(asSelect)
 }
