@@ -406,9 +406,6 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
     case ReplaceData(r: DataSourceV2Relation, query, write) =>
       ReplaceDataExec(r.table.asMergeable, planLater(query), refreshCache(r), write) :: Nil
 
-    case MergeInto(mergeIntoParams, output, child) =>
-      MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil
-
     case _ => Nil
   }
 

@@ -18,7 +18,7 @@ package org.apache.spark.sql.internal
 
 import org.apache.spark.annotation.Unstable
 import org.apache.spark.sql.{ExperimentalMethods, SparkSession, UDFRegistration, _}
-import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, Analyzer, FunctionRegistry, ResolveSessionCatalog, RowLevelOperationsPredicateCheck}
+import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry, ResolveSessionCatalog}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
@@ -179,7 +179,6 @@ abstract class BaseSessionStateBuilder(
         PreprocessTableCreation(session) +:
         PreprocessTableInsertion +:
         DataSourceAnalysis +:
-        AlignRowLevelOperations +:
         customPostHocResolutionRules
 
     override val extendedCheckRules: Seq[LogicalPlan => Unit] =
@@ -188,7 +187,6 @@ abstract class BaseSessionStateBuilder(
         HiveOnlyCheck +:
         TableCapabilityCheck +:
         CommandCheck +:
-        RowLevelOperationsPredicateCheck +:
         customCheckRules
   }
 
