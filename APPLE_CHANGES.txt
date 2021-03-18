@@ -74,6 +74,35 @@ SPARK-34361     In case of downscaling avoid killing of executors already known 
 SPARK-34547     Only use metadata columns for resolution as last resort
 SPARK-34417     org.apache.spark.sql.DataFrameNaFunctions.fillMap fails for column name having a dot
 SPARK-34561     Fix drop/add columns from/to a dataset of v2 `DESCRIBE TABLE`
+SPARK-34545     Fix issues with valueCompare feature of pyrolite
+SPARK-34676     TableCapabilityCheckSuite should not inherit all tests from AnalysisSuite
+SPARK-34681     Fix bug for full outer shuffled hash join when building left side with non-equal condition
+SPARK-34683     Update the documents to explain the usage of LIST FILE and LIST JAR in case they take multiple file names
+SPARK-34682     Fix regression in canonicalization error check in CustomShuffleReaderExec
+SPARK-34682     Use PrivateMethodTester instead of reflection
+SPARK-34507     Update scala.version in parent POM when changing Scala version for cross-build
+SPARK-34711     Exercise code-gen enable/disable code paths for SHJ in join test suites
+MINOR           Remove unnecessary extend from BroadcastHashJoinExec
+SPARK-34696     Fix CodegenInterpretedPlanTest to generate correct test cases
+SPARK-34697     Allow DESCRIBE FUNCTION and SHOW FUNCTIONS explain about || (string concatenation operator)
+SPARK-34713     Fix group by CreateStruct with ExtractValue
+SPARK-33498     Remove SQLConf.withExistingConf in CastSuite
+SPARK-34724     Fix Interpreted evaluation by using getMethod instead of getDeclaredMethod
+SPARK-34743     ExpressionEncoderSuite should use deepEquals when we expect `array of array`
+MINOR           Remove unused variable in NewInstance.constructor
+SPARK-34752     Bump Jetty to 9.4.37 to address CVE-2020-27223
+SPARK-34727     Fix discrepancy in casting float to timestamp
+SPARK-34504     Avoid unnecessary resolving of SQL temp views for DDL commands
+SPARK-34770     InMemoryCatalog.tableExists should not fail if database doesn't exist
+SPARK-34768     Respect the default input buffer size in Univocity
+SPARK-34749     Simplify ResolveCreateNamedStruct
+SPARK-34737     Cast input float to double in `TIMESTAMP_SECONDS`
+SPARK-34762     Fix the build failure with Scala 2.13 which is related to commons-cli
+SPARK-34731     Avoid ConcurrentModificationException when redacting properties in EventLoggingListener
+SPARK-34774     Ensure change-scala-version.sh update scala.version in parent POM correctly
+SPARK-34766     Do not capture maven config for views
+SPARK-34760     Replace `favorite_color` with `age` in JavaSQLDataSourceExample
+SPARK-34723     Correct parameter type for subexpression elimination under whole-stage
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
