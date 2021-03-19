@@ -17,8 +17,12 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.Eventually
+import org.scalatest.time.SpanSugar._
 
 import org.apache.spark.{SparkConf, SparkContext, SparkException, SparkFunSuite}
 import org.apache.spark.internal.config.EXECUTOR_ALLOW_SPARK_CONTEXT
@@ -29,12 +33,13 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.internal.{BaseSessionStateBuilder, SessionState, SessionStateBuilder, SQLConf}
 import org.apache.spark.sql.internal.StaticSQLConf._
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.ExecutionListenerBus
 import org.apache.spark.util.ThreadUtils
 
 /**
  * Test cases for the builder pattern of [[SparkSession]].
  */
-class SparkSessionBuilderSuite extends SparkFunSuite with BeforeAndAfterEach {
+class SparkSessionBuilderSuite extends SparkFunSuite with BeforeAndAfterEach with Eventually {
 
   override def afterEach(): Unit = {
     // This suite should not interfere with the other test suites.
@@ -42,6 +47,34 @@ class SparkSessionBuilderSuite extends SparkFunSuite with BeforeAndAfterEach {
     SparkSession.clearActiveSession()
     SparkSession.getDefaultSession.foreach(_.stop())
     SparkSession.clearDefaultSession()
+  }
+
+  test("SPARK-34087: Fix memory leak of ExecutionListenerBus") {
+    val spark = SparkSession.builder()
+      .master("local")
+      .getOrCreate()
+
+    @inline def listenersNum(): Int = {
+      spark.sparkContext
+        .listenerBus
+        .listeners
+        .asScala
+        .count(_.isInstanceOf[ExecutionListenerBus])
+    }
+
+    (1 to 10).foreach { _ =>
+      spark.cloneSession()
+      SparkSession.clearActiveSession()
+    }
+
+    eventually(timeout(10.seconds), interval(1.seconds)) {
+      System.gc()
+      // After GC, the number of ExecutionListenerBus should be less than 11 (we created 11
+      // SparkSessions in total).
+      // Since GC can't 100% guarantee all out-of-referenced objects be cleaned at one time,
+      // here, we check at least one listener is cleaned up to prove the mechanism works.
+      assert(listenersNum() < 11)
+    }
   }
 
   test("create with config options and propagate them to SparkContext and SparkSession") {
