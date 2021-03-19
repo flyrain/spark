@@ -29,6 +29,7 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.hadoop.fs.{FileSystem, Path}
 
 import org.apache.spark.{SparkConf, SparkException}
+import org.apache.spark.deploy.DependencyUtils.downloadFile
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.deploy.k8s.Config.KUBERNETES_FILE_UPLOAD_PATH
 import org.apache.spark.internal.Logging
@@ -81,9 +82,13 @@ private[spark] object KubernetesUtils extends Logging {
 
   def loadPodFromTemplate(
       kubernetesClient: KubernetesClient,
-      templateFile: File,
-      containerName: Option[String]): SparkPod = {
+      templateFileName: String,
+      containerName: Option[String],
+      conf: SparkConf): SparkPod = {
     try {
+      val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
+      val localFile = downloadFile(templateFileName, Utils.createTempDir(), conf, hadoopConf, null)
+      val templateFile = new File(new java.net.URI(localFile).getPath)
       val pod = kubernetesClient.pods().load(templateFile).get()
       selectSparkContainer(pod, containerName)
     } catch {
