@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
-import org.apache.spark.sql.connector.expressions.Transform
+import org.apache.spark.sql.connector.expressions.{SortOrder, Transform}
 import org.apache.spark.sql.types.StructType
 
 case class CreateTableExec(
@@ -32,13 +32,17 @@ case class CreateTableExec(
     tableSchema: StructType,
     partitioning: Seq[Transform],
     tableProperties: Map[String, String],
-    ignoreIfExists: Boolean) extends V2CommandExec {
+    ignoreIfExists: Boolean,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends V2CommandExec {
   import org.apache.spark.sql.connector.catalog.CatalogV2Implicits._
 
   override protected def run(): Seq[InternalRow] = {
     if (!catalog.tableExists(identifier)) {
       try {
-        catalog.createTable(identifier, tableSchema, partitioning.toArray, tableProperties.asJava)
+        catalog.createTable(
+          identifier, tableSchema, partitioning.toArray, tableProperties.asJava,
+          distributionMode, ordering.toArray)
       } catch {
         case _: TableAlreadyExistsException if ignoreIfExists =>
           logWarning(s"Table ${identifier.quoted} was created concurrently. Ignoring.")

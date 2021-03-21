@@ -116,6 +116,22 @@ private[sql] final case class BucketTransform(
   }
 }
 
+private[sql] object TruncateTransform {
+  def unapply(expr: Expression): Option[(Int, FieldReference)] = expr match {
+    case transform: Transform =>
+      transform match {
+        case NamedTransform("truncate", Seq(Ref(seq: Seq[String]), Lit(value: Int, IntegerType))) =>
+          Some((value, FieldReference(seq)))
+        case NamedTransform("truncate", Seq(Lit(value: Int, IntegerType), Ref(seq: Seq[String]))) =>
+          Some((value, FieldReference(seq)))
+        case _ =>
+          None
+      }
+    case _ =>
+      None
+  }
+}
+
 private[sql] object BucketTransform {
   def unapply(expr: Expression): Option[(Int, FieldReference)] = expr match {
     case transform: Transform =>

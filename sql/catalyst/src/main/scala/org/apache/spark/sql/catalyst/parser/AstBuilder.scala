@@ -2518,6 +2518,13 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
       Map[String, String], Option[String], Option[String], Option[SerdeInfo])
 
   /**
+   * Type to keep track of custom table clauses:
+   * - distribution mode
+   * - ordering
+   */
+  type CustomTableClauses = (String, Seq[V2SortOrder])
+
+  /**
    * Validate a create table statement and return the [[TableIdentifier]].
    */
   override def visitCreateTableHeader(
@@ -2968,6 +2975,21 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
     }
   }
 
+  private def visitCustomCreateTableClauses(ctx: CreateTableClausesContext): CustomTableClauses = {
+    checkDuplicateClauses(ctx.writeSpec, "DISTRIBUTED/ORDERED BY", ctx)
+
+    ctx.writeSpec.asScala.headOption match {
+      case Some(writeSpec) =>
+        val (distributionSpec, orderingSpec) = toDistributionAndOrderingSpec(writeSpec)
+        val distributionMode = toDistributionMode(distributionSpec, orderingSpec)
+        val ordering = toOrdering(orderingSpec)
+        (distributionMode, ordering)
+
+      case None =>
+        ("none", Array.empty[V2SortOrder])
+    }
+  }
+
   override def visitCreateTableClauses(ctx: CreateTableClausesContext): TableClauses = {
     checkDuplicateClauses(ctx.TBLPROPERTIES, "TBLPROPERTIES", ctx)
     checkDuplicateClauses(ctx.OPTIONS, "OPTIONS", ctx)
@@ -3080,6 +3102,11 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
     }
 
     val partitioning = partitionExpressions(partTransforms, partCols, ctx)
+    val (distributionMode, ordering) = visitCustomCreateTableClauses(ctx.createTableClauses)
+
+    if (distributionMode == "hash" && partitioning.isEmpty) {
+      operationNotAllowed("DISTRIBUTED BY PARTITION is supported only for partitioned tables", ctx)
+    }
 
     Option(ctx.query).map(plan) match {
       case Some(_) if columns.nonEmpty =>
@@ -3096,14 +3123,16 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
       case Some(query) =>
         CreateTableAsSelectStatement(
           table, query, partitioning, bucketSpec, properties, provider, options, location, comment,
-          writeOptions = Map.empty, serdeInfo, external = external, ifNotExists = ifNotExists)
+          writeOptions = Map.empty, serdeInfo, external = external, ifNotExists = ifNotExists,
+          distributionMode, ordering)
 
       case _ =>
         // Note: table schema includes both the table columns list and the partition columns
         // with data type.
         val schema = StructType(columns ++ partCols)
         CreateTableStatement(table, schema, partitioning, bucketSpec, properties, provider,
-          options, location, comment, serdeInfo, external = external, ifNotExists = ifNotExists)
+          options, location, comment, serdeInfo, external = external, ifNotExists = ifNotExists,
+          distributionMode, ordering)
     }
   }
 
@@ -3160,6 +3189,11 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
     }
 
     val partitioning = partitionExpressions(partTransforms, partCols, ctx)
+    val (distributionMode, ordering) = visitCustomCreateTableClauses(ctx.createTableClauses)
+
+    if (distributionMode == "hash" && partitioning.isEmpty) {
+      operationNotAllowed("DISTRIBUTED BY PARTITION is supported only for partitioned tables", ctx)
+    }
 
     Option(ctx.query).map(plan) match {
       case Some(_) if columns.nonEmpty =>
@@ -3176,14 +3210,14 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
       case Some(query) =>
         ReplaceTableAsSelectStatement(table, query, partitioning, bucketSpec, properties,
           provider, options, location, comment, writeOptions = Map.empty, serdeInfo,
-          orCreate = orCreate)
+          orCreate = orCreate, distributionMode, ordering)
 
       case _ =>
         // Note: table schema includes both the table columns list and the partition columns
         // with data type.
         val schema = StructType(columns ++ partCols)
         ReplaceTableStatement(table, schema, partitioning, bucketSpec, properties, provider,
-          options, location, comment, serdeInfo, orCreate = orCreate)
+          options, location, comment, serdeInfo, orCreate = orCreate, distributionMode, ordering)
     }
   }
 

@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{CannotReplaceMissingTableException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.{Identifier, StagedTable, StagingTableCatalog, Table, TableCatalog}
-import org.apache.spark.sql.connector.expressions.Transform
+import org.apache.spark.sql.connector.expressions.{SortOrder, Transform}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.Utils
 
@@ -34,7 +34,9 @@ case class ReplaceTableExec(
     partitioning: Seq[Transform],
     tableProperties: Map[String, String],
     orCreate: Boolean,
-    invalidateCache: (TableCatalog, Table, Identifier) => Unit) extends V2CommandExec {
+    invalidateCache: (TableCatalog, Table, Identifier) => Unit,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends V2CommandExec {
 
   override protected def run(): Seq[InternalRow] = {
     if (catalog.tableExists(ident)) {
@@ -44,7 +46,9 @@ case class ReplaceTableExec(
     } else if (!orCreate) {
       throw new CannotReplaceMissingTableException(ident)
     }
-    catalog.createTable(ident, tableSchema, partitioning.toArray, tableProperties.asJava)
+    catalog.createTable(
+      ident, tableSchema, partitioning.toArray, tableProperties.asJava,
+      distributionMode, ordering.toArray)
     Seq.empty
   }
 
@@ -58,7 +62,9 @@ case class AtomicReplaceTableExec(
     partitioning: Seq[Transform],
     tableProperties: Map[String, String],
     orCreate: Boolean,
-    invalidateCache: (TableCatalog, Table, Identifier) => Unit) extends V2CommandExec {
+    invalidateCache: (TableCatalog, Table, Identifier) => Unit,
+    distributionMode: String,
+    ordering: Seq[SortOrder]) extends V2CommandExec {
 
   override protected def run(): Seq[InternalRow] = {
     if (catalog.tableExists(identifier)) {
@@ -67,11 +73,13 @@ case class AtomicReplaceTableExec(
     }
     val staged = if (orCreate) {
       catalog.stageCreateOrReplace(
-        identifier, tableSchema, partitioning.toArray, tableProperties.asJava)
+        identifier, tableSchema, partitioning.toArray, tableProperties.asJava,
+        distributionMode, ordering.toArray)
     } else if (catalog.tableExists(identifier)) {
       try {
         catalog.stageReplace(
-          identifier, tableSchema, partitioning.toArray, tableProperties.asJava)
+          identifier, tableSchema, partitioning.toArray, tableProperties.asJava,
+          distributionMode, ordering.toArray)
       } catch {
         case e: NoSuchTableException =>
           throw new CannotReplaceMissingTableException(identifier, Some(e))

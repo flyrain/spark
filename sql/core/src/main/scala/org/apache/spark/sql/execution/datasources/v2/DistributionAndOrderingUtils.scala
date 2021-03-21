@@ -19,14 +19,28 @@ package org.apache.spark.sql.execution.datasources.v2
 
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.Resolver
-import org.apache.spark.sql.catalyst.expressions.{Ascending, Descending, Expression, NamedExpression, NullOrdering, NullsFirst, NullsLast, SortDirection, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Ascending, Descending, Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullOrdering, NullsFirst, NullsLast, SortDirection, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, RepartitionByExpression, Sort}
-import org.apache.spark.sql.connector.distributions.{ClusteredDistribution, OrderedDistribution, UnspecifiedDistribution}
-import org.apache.spark.sql.connector.expressions.{Expression => V2Expression, FieldReference, IdentityTransform, NullOrdering => V2NullOrdering, SortDirection => V2SortDirection, SortValue}
+import org.apache.spark.sql.connector.distributions.{ClusteredDistribution, Distribution => V2Distribution, OrderedDistribution, UnspecifiedDistribution}
+import org.apache.spark.sql.connector.expressions.{BucketTransform, DaysTransform, Expression => V2Expression, FieldReference, HoursTransform, IdentityTransform, MonthsTransform, NullOrdering => V2NullOrdering, SortDirection => V2SortDirection, SortOrder => V2SortOrder, SortValue, TruncateTransform, YearsTransform}
 import org.apache.spark.sql.connector.write.{RequiresDistributionAndOrdering, Write}
 import org.apache.spark.sql.internal.SQLConf
 
 object DistributionAndOrderingUtils {
+
+  // internal version used by rules that rewrite row-level plans for Iceberg
+  def prepareQuery(
+      distribution: V2Distribution,
+      ordering: Array[V2SortOrder],
+      query: LogicalPlan,
+      conf: SQLConf): LogicalPlan = {
+
+    val write = new RequiresDistributionAndOrdering {
+      override def requiredDistribution: V2Distribution = distribution
+      override def requiredOrdering: Array[V2SortOrder] = ordering
+    }
+    prepareQuery(write, query, conf)
+  }
 
   def prepareQuery(write: Write, query: LogicalPlan, conf: SQLConf): LogicalPlan = write match {
     case write: RequiresDistributionAndOrdering =>
@@ -87,6 +101,18 @@ object DistributionAndOrderingUtils {
         SortOrder(catalystChild, toCatalyst(direction), toCatalyst(nullOrdering), Seq.empty)
       case IdentityTransform(ref) =>
         resolve(ref)
+      case BucketTransform(numBuckets, ref) =>
+        IcebergBucketTransform(numBuckets, resolve(ref))
+      case TruncateTransform(length, ref) =>
+        IcebergTruncateTransform(resolve(ref), length)
+      case YearsTransform(ref) =>
+        IcebergYearTransform(resolve(ref))
+      case MonthsTransform(ref) =>
+        IcebergMonthTransform(resolve(ref))
+      case DaysTransform(ref) =>
+        IcebergDayTransform(resolve(ref))
+      case HoursTransform(ref) =>
+        IcebergHourTransform(resolve(ref))
       case ref: FieldReference =>
         resolve(ref)
       case _ =>
