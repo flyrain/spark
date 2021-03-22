@@ -34,6 +34,7 @@ SPARK-34496     Upgrade ZSTD-JNI to 1.4.8-5 for better API compatibility
 SPARK-34559     Upgrade to ZSTD JNI 1.4.8-6
 SPARK-34486     Upgrade kubernetes-client to 4.13.2
 SPARK-34650     Exclude zstd-jni transitive dependency from Kafka Client
+SPARK-34783     Support remote template files
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -103,6 +104,18 @@ SPARK-34774     Ensure change-scala-version.sh update scala.version in parent PO
 SPARK-34766     Do not capture maven config for views
 SPARK-34760     Replace `favorite_color` with `age` in JavaSQLDataSourceExample
 SPARK-34723     Correct parameter type for subexpression elimination under whole-stage
+SPARK-34747     Add virtual operators to the built-in function document
+SPARK-34719     Correctly resolve the view query with duplicated column names
+SPARK-34772     RebaseDateTime loadRebaseRecords should use Spark classloader instead of context
+SPARK-34087     Fix memory leak of ExecutionListenerBus
+SPARK-34798     Fix incorrect join condition
+SPARK-34776     Nested column pruning should not prune Window produced attributes
+SPARK-34128     Suppress undesirable TTransportException warnings involved in THRIFT-4805
+MINOR           Doc 'mode' as a supported Imputer strategy in Pyspark
+SPARK-34796     Initialize counter variable for LIMIT code-gen in doProduce()
+SPARK-34811     Redact fs.s3a.access.key like secret and token
+SPARK-34813     Remove Scala 2.13 build GitHub Action job from branch-3.1
+SPARK-34772     Disable a test case using Hive 1.2.1 in Java9+ environment
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -150,3 +163,4 @@ MINOR           Upgrade Parquet to 1.10.1.7-apple to match zstd-jni
 MINOR           Use zstd as default compression codec
 MINOR           Upgrade ZSTD-JNI to 1.4.8-7
 MINOR           Upgrade Parquet to 1.10.1.8-apple
+MINOR           Add Iceberg back (#985)
