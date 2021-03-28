@@ -127,7 +127,6 @@ rdar://70562690 Update kubernetes Dockerfile in Apple Spark to AppleJDK
 rdar://71819374 Bridge in LZO codec family
 rdar://68238603 Support disable AJAX call on Stage Page
 rdar://71465483 Add S3A I/O metrics to Prometheus
-rdar://72550481 Enable spark.executor.processTreeMetrics.enabled by default
 rdar://72552554 Increase DEFAULT_MAX_CONSECUTIVE_STAGE_ATTEMPTS from 4 to 6
 rdar://72735876 Enable spark.metrics.appStatusSource.enabled by default
 MINOR           Upgrade to Hive 2.3.8.1-apple
