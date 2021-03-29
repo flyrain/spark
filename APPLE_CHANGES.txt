@@ -116,6 +116,25 @@ SPARK-34796     Initialize counter variable for LIMIT code-gen in doProduce()
 SPARK-34811     Redact fs.s3a.access.key like secret and token
 SPARK-34813     Remove Scala 2.13 build GitHub Action job from branch-3.1
 SPARK-34772     Disable a test case using Hive 1.2.1 in Java9+ environment
+SPARK-34225     Don't encode further when a URI form string is passed to addFile or addJar
+SPARK-34803     Pass the raised ImportError if pandas or pyarrow fail to import
+SPARK-34820     add apt-update before gnupg install
+SPARK-34790     Disable fetching shuffle blocks in batch when io encryption is enabled
+MINOR           Updating the link for Azure Data Lake Gen 2 in docs
+SPARK-33482     Fix FileScan equality check
+MINOR           Update sql-ref-syntax-dml-insert-into.md
+SPARK-34842     Corrects the type of `date_dim.d_quarter_name` in the TPCDS schema
+SPARK-34763     col(), $"<name>" and df("name") should handle quoted column names properly
+SPARK-34832     Set EXECUTOR_ALLOW_SPARK_CONTEXT to true to ensure ExternalAppendOnlyUnsafeRowArrayBenchmark run successfully
+SPARK-34630     Added typehint for pyspark.sql.Column.contains
+SPARK-34833     Apply right-padding correctly for correlated subqueries
+SPARK-34840     Fixes cases of corruption in merged shuffle
+SPARK-34833     Handle outer references in all the places
+SPARK-34874     Recover test reports for failed GA builds
+SPARK-34829     Fix higher order function results
+SPARK-34876     Fill defaultResult of non-nullable aggregates
+SPARK-34814     LikeSimplification should handle NULL
+SPARK-34845     ProcfsMetricsGetter shouldn't return partial procfs metrics
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
