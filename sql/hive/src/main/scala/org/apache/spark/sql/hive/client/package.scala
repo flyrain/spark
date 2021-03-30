@@ -107,7 +107,7 @@ package object client {
         "org.pentaho:pentaho-aggdesigner-algorithm"))
 
     // Hive 2.3.8 shades guava and includes calcite:* and avatica:avatica.
-    case object v2_3_8 extends HiveVersion("2.3.8.1-apple",
+    case object v2_3_8 extends HiveVersion("2.3.8.3-apple",
       extraDeps = Seq("com.fasterxml.jackson.core:jackson-annotations:2.7.9"),
       exclusions = Seq("org.apache.curator:*",
         "com.fasterxml.jackson.core:*",
