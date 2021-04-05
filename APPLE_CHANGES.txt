@@ -135,6 +135,16 @@ SPARK-34829     Fix higher order function results
 SPARK-34876     Fill defaultResult of non-nullable aggregates
 SPARK-34814     LikeSimplification should handle NULL
 SPARK-34845     ProcfsMetricsGetter shouldn't return partial procfs metrics
+SPARK-34900     Make sure benchmarks can run using spark-submit cmd described in the guide
+SPARK-34909     Fix conversion of negative to unsigned in conv()
+SPARK-34915     Cache Maven, SBT and Scala in all jobs that use them
+SPARK-24931     Fix the GA failure related to R linter
+SPARK-34933     Remove the description that || and && can be used as logical operators from the document
+SPARK-34940     Fix test of BasicWriteTaskStatsTrackerSuite
+SPARK-34948     Add ownerReference to executor configmap to fix leakages
+SPARK-34939     Throw fetch failure exception when unable to deserialize broadcasted map statuses
+SPARK-34951     Set the system encoding as UTF-8 to recover the Sphinx build in GitHub Actions
+SPARK-34954     Use zstd codec name in ORC file names
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
