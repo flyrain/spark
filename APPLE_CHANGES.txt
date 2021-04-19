@@ -35,6 +35,8 @@ SPARK-34559     Upgrade to ZSTD JNI 1.4.8-6
 SPARK-34486     Upgrade kubernetes-client to 4.13.2
 SPARK-34650     Exclude zstd-jni transitive dependency from Kafka Client
 SPARK-34783     Support remote template files
+SPARK-35003     Improve performance for reading smallint in vectorized Parquet reader
+SPARK-34954     Use zstd codec name in ORC file names
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -144,7 +146,30 @@ SPARK-34940     Fix test of BasicWriteTaskStatsTrackerSuite
 SPARK-34948     Add ownerReference to executor configmap to fix leakages
 SPARK-34939     Throw fetch failure exception when unable to deserialize broadcasted map statuses
 SPARK-34951     Set the system encoding as UTF-8 to recover the Sphinx build in GitHub Actions
-SPARK-34954     Use zstd codec name in ORC file names
+SPARK-34949     Prevent BlockManager reregister when Executor is shutting down
+SPARK-34923     Metadata output should be empty for more plans
+SPARK-34965     Remove .sbtopts that duplicately sets the default memory
+SPARK-34970     Redact map-type options in the output of explain()
+SPARK-34922     Use a relative cost comparison function in the CBO
+SPARK-34988     Upgrade Jetty for CVE-2021-28165
+SPARK-35004     Fix Incorrect assertion of `master/worker web ui available behind front-end reverseProxy` in MasterSuite
+SPARK-34963     Fix nested column pruning for extracting case-insensitive struct field from array of struct
+MINOR           Fix wrong Python code sample
+SPARK-34630     Add typehint for pyspark.__version__
+SPARK-34926     PartitioningUtils.getPathFragment() should respect partition value is null
+SPARK-35019     Fix type hints mismatches in pyspark.sql.*
+SPARK-34212     Move the added test to ParquetQuerySuite
+SPARK-35014     Fix the PhysicalAggregation pattern to not rewrite foldable expressions
+SPARK-35045     Add an internal option to control input buffer in univocity
+MINOR           Fix docstring for pyspark.sql.DataFrameWriter.json lineSep param
+SPARK-35002     Fix java.net.BindException in MiniYARNCluster
+SPARK-35002     Fix the java.net.BindException when testing with Github Action
+SPARK-35002     Use localhost instead of 127.0.0.1 at SPARK_LOCAL_IP in GA builds
+SPARK-34834     Fix a potential Netty memory leak in TransportResponseHandler
+SPARK-34630     Add __version__ into pyspark init __all__
+SPARK-34225     Replace Hadoop's Path with Utils.resolveURI to make the way to get URI simple
+SPARK-35045     Add a configuration for CSV input buffer size
+SPARK-35136     Remove initial null value of LiveStage.info
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
