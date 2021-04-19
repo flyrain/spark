@@ -378,7 +378,7 @@ builds:
     finally:
       tag:
         enabled: true
-        expression: "releases_2.12/3.1.1.8-apple"
+        expression: "releases_2.12/3.1.1.9-apple"
 
   - name: apple-spark-2.12_3.1.1-binaries-release
     branchName: branch-3.1.1-apple-release
