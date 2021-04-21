@@ -37,6 +37,7 @@ SPARK-34650     Exclude zstd-jni transitive dependency from Kafka Client
 SPARK-34783     Support remote template files
 SPARK-35003     Improve performance for reading smallint in vectorized Parquet reader
 SPARK-34954     Use zstd codec name in ORC file names
+SPARK-35131     Support early driver service clean-up during app termination
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -219,3 +220,4 @@ MINOR           Upgrade Parquet to 1.10.1.8-apple
 MINOR           Add Iceberg back (#985)
 MONOR           Forward port multiple containers and shuffle service from ACS 3.0
 MINOR           Upgrade to Hive 2.3.8.3-apple
+MINOR           Restart policy should be never (changed during a forward port of multiple container support)
