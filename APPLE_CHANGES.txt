@@ -38,6 +38,7 @@ SPARK-34783     Support remote template files
 SPARK-35003     Improve performance for reading smallint in vectorized Parquet reader
 SPARK-34954     Use zstd codec name in ORC file names
 SPARK-35131     Support early driver service clean-up during app termination
+SPARK-34549     Upgrade aws kinesis to 1.14.0 and java sdk 1.11.844
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -171,6 +172,19 @@ SPARK-34630     Add __version__ into pyspark init __all__
 SPARK-34225     Replace Hadoop's Path with Utils.resolveURI to make the way to get URI simple
 SPARK-35045     Add a configuration for CSV input buffer size
 SPARK-35136     Remove initial null value of LiveStage.info
+SPARK-35117     Change progress bar back to highlight ratio of tasks in progress
+SPARK-35080     Only allow a subset of correlated equality predicates when a subquery is aggregated
+SPARK-34639     RelationalGroupedDataset.alias should not create UnresolvedAlias
+SPARK-35096     SchemaPruning should adhere spark.sql.caseSensitive config
+SPARK-35142     Fix incorrect return type for `rawPredictionUDF` in `OneVsRestModel`
+SPARK-35178     Use new Apache 'closer.lua' syntax to obtain Maven
+SPARK-35178     Update Zinc argument
+SPARK-34674     Close SparkContext after the Main method has finished
+SPARK-34897     Support reconcile schemas based on index after nested column pruning
+SPARK-35210     Upgrade Jetty to 9.4.40 to fix ERR_CONNECTION_RESET issue
+SPARK-35168     mapred.reduce.tasks should be shuffle.partitions not adaptive.coalescePartitions.initialPartitionNum
+SPARK-35213     Keep the correct ordering of nested structs in chained withField operations
+SPARK-35224     Fix buffer overflow in `MutableProjectionSuite`
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -221,3 +235,4 @@ MINOR           Add Iceberg back (#985)
 MONOR           Forward port multiple containers and shuffle service from ACS 3.0
 MINOR           Upgrade to Hive 2.3.8.3-apple
 MINOR           Restart policy should be never (changed during a forward port of multiple container support)
+MINOR           Updates Iceberg to 0.12.0-preview-7 (#1018)
