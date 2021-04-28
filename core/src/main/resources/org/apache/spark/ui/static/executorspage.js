@@ -425,7 +425,7 @@ $(document).ready(function () {
                         {
                             data: function (row, type) {
                                 var peakMemoryMetrics = row.peakMemoryMetrics;
-                                if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (peakMemoryMetrics != null && typeof peakMemoryMetrics !== 'undefined') {
                                     if (type !== 'display')
                                         return peakMemoryMetrics.JVMHeapMemory;
                                     else
@@ -443,7 +443,7 @@ $(document).ready(function () {
                         {
                             data: function (row, type) {
                                 var peakMemoryMetrics = row.peakMemoryMetrics;
-                                if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (peakMemoryMetrics != null && typeof peakMemoryMetrics !== 'undefined') {
                                     if (type !== 'display')
                                         return peakMemoryMetrics.OnHeapExecutionMemory;
                                     else
@@ -461,7 +461,7 @@ $(document).ready(function () {
                         {
                             data: function (row, type) {
                                 var peakMemoryMetrics = row.peakMemoryMetrics;
-                                if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (peakMemoryMetrics != null && typeof peakMemoryMetrics !== 'undefined') {
                                     if (type !== 'display')
                                         return peakMemoryMetrics.OnHeapStorageMemory;
                                     else
@@ -479,7 +479,7 @@ $(document).ready(function () {
                         {
                             data: function (row, type) {
                                 var peakMemoryMetrics = row.peakMemoryMetrics;
-                                if (typeof peakMemoryMetrics !== 'undefined') {
+                                if (peakMemoryMetrics != null && typeof peakMemoryMetrics !== 'undefined') {
                                     if (type !== 'display')
                                         return peakMemoryMetrics.DirectPoolMemory;
                                     else
