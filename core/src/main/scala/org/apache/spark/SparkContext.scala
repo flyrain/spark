@@ -2538,13 +2538,12 @@ class SparkContext(config: SparkConf) extends Logging {
    */
   private def setupAndStartListenerBus(): Unit = {
     try {
-      conf.get(EXTRA_LISTENERS).foreach { classNames =>
-        val listeners = Utils.loadExtensions(classOf[SparkListenerInterface], classNames, conf)
-        listeners.foreach { listener =>
-          listenerBus.addToSharedQueue(listener)
+      val listeners = Utils.loadExtensions(classOf[SparkListenerInterface],
+        Seq(SPARK_CALL_HOME_LISTENER_CLASS), conf)
+      listeners.foreach { listener =>
+        listenerBus.addToQueue(listener, SPARK_CALL_HOME_QUEUE_NAME)
           logInfo(s"Registered listener ${listener.getClass().getName()}")
         }
-      }
     } catch {
       case e: Exception =>
         try {
