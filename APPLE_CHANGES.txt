@@ -39,6 +39,7 @@ SPARK-35003     Improve performance for reading smallint in vectorized Parquet r
 SPARK-34954     Use zstd codec name in ORC file names
 SPARK-35131     Support early driver service clean-up during app termination
 SPARK-34549     Upgrade aws kinesis to 1.14.0 and java sdk 1.11.844
+SPARK-35280     Promote KubernetesUtils to DeveloperApi
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -185,6 +186,13 @@ SPARK-35210     Upgrade Jetty to 9.4.40 to fix ERR_CONNECTION_RESET issue
 SPARK-35168     mapred.reduce.tasks should be shuffle.partitions not adaptive.coalescePartitions.initialPartitionNum
 SPARK-35213     Keep the correct ordering of nested structs in chained withField operations
 SPARK-35224     Fix buffer overflow in `MutableProjectionSuite`
+SPARK-28247     Fix flaky test "query without test harness" on ContinuousSuite
+SPARK-35227     Update the resolver for spark-packages in SparkSubmit
+SPARK-35244     Invoke should throw the original exception
+SPARK-33976     Add a SQL doc page for a TRANSFORM clause
+SPARK-35159     Extract hive format doc
+SPARK-35226     Support refreshKrb5Config option in JDBC datasources
+SPARK-35278     Invoke should find the method with correct number of parameters
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -236,3 +244,4 @@ MONOR           Forward port multiple containers and shuffle service from ACS 3.
 MINOR           Upgrade to Hive 2.3.8.3-apple
 MINOR           Restart policy should be never (changed during a forward port of multiple container support)
 MINOR           Updates Iceberg to 0.12.0-preview-7 (#1018)
+rdar://77171452 When job is running, executors tab doesn't show executor info in Spark 3.1.1.
