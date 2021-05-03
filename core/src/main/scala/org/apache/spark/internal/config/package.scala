@@ -38,9 +38,7 @@ package object config {
   private[spark] val SPARK_TASK_PREFIX = "spark.task"
   private[spark] val LISTENER_BUS_EVENT_QUEUE_PREFIX = "spark.scheduler.listenerbus.eventqueue"
   private[spark] val SPARK_CALL_HOME_LISTENER_CLASS =
-    "com.apple.spark.callhome.listener.SparkCallHomeListenerV2"
-  private[spark] val SPARK_CALL_HOME_QUEUE_NAME =
-    "SparkCallHome"
+    "com.apple.aci.data.spark.callhome.listener.v1.SparkCallHomeListenerV1"
 
   private[spark] val RESOURCES_DISCOVERY_PLUGIN =
     ConfigBuilder("spark.resources.discoveryPlugin")
