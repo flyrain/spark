@@ -245,3 +245,4 @@ MINOR           Upgrade to Hive 2.3.8.3-apple
 MINOR           Restart policy should be never (changed during a forward port of multiple container support)
 MINOR           Updates Iceberg to 0.12.0-preview-7 (#1018)
 rdar://77171452 When job is running, executors tab doesn't show executor info in Spark 3.1.1.
+N/A             Upgrade parquet to 1.10.2.4-apple to bring PARQUET-2022
