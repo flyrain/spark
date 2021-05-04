@@ -632,9 +632,8 @@ class SparkContext(config: SparkConf) extends Logging {
       }
     _executorAllocationManager.foreach(_.start())
 
-    if (conf.get(SPARK_CALL_HOME_ENABLED)) {
-      setupSparkCallHomeListener()
-    }
+
+    setupSparkCallHomeListener()
     setupAndStartListenerBus()
     postEnvironmentUpdate()
     postApplicationStart()
@@ -2521,7 +2520,7 @@ class SparkContext(config: SparkConf) extends Logging {
       val listeners = Utils.loadExtensions(classOf[SparkListenerInterface],
         Seq(SPARK_CALL_HOME_LISTENER_CLASS), conf)
       listeners.foreach { listener =>
-        listenerBus.addToSharedQueue(listener)
+        listenerBus.addToQueue(listener, SPARK_CALL_HOME_QUEUE_NAME)
         logInfo(s"Registered Spark Call Home listener ${listener.getClass().getName()}")
       }
     } catch {
