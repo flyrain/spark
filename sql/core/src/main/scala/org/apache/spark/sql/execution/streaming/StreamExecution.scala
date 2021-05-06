@@ -96,7 +96,9 @@ abstract class StreamExecution(
 
   val resolvedCheckpointRoot = {
     val checkpointPath = new Path(checkpointRoot)
-    val fs = checkpointPath.getFileSystem(sparkSession.sessionState.newHadoopConf())
+    val fileManager = CheckpointFileManager.create(checkpointPath,
+      sparkSession.sessionState.newHadoopConf())
+
     if (sparkSession.conf.get(SQLConf.STREAMING_CHECKPOINT_ESCAPED_PATH_CHECK_ENABLED)
         && StreamExecution.containsSpecialCharsInPath(checkpointPath)) {
       // In Spark 2.4 and earlier, the checkpoint path is escaped 3 times (3 `Path.toUri.toString`
@@ -106,7 +108,7 @@ abstract class StreamExecution(
         new Path(new Path(checkpointPath.toUri.toString).toUri.toString).toUri.toString
       val legacyCheckpointDirExists =
         try {
-          fs.exists(new Path(legacyCheckpointDir))
+          fileManager.exists(new Path(legacyCheckpointDir))
         } catch {
           case NonFatal(e) =>
             // We may not have access to this directory. Don't fail the query if that happens.
@@ -133,8 +135,7 @@ abstract class StreamExecution(
             .stripMargin)
       }
     }
-    val checkpointDir = checkpointPath.makeQualified(fs.getUri, fs.getWorkingDirectory)
-    fs.mkdirs(checkpointDir)
+    val checkpointDir = fileManager.createCheckpointDirectory()
     checkpointDir.toString
   }
   logInfo(s"Checkpoint root $checkpointRoot resolved to $resolvedCheckpointRoot.")
@@ -273,6 +274,10 @@ abstract class StreamExecution(
   protected def checkpointFile(name: String): String =
     new Path(new Path(resolvedCheckpointRoot), name).toString
 
+  /** All checkpoint file operations should be performed through `CheckpointFileManager`. */
+  private val fileManager = CheckpointFileManager.create(new Path(resolvedCheckpointRoot),
+      sparkSession.sessionState.newHadoopConf)
+
   /**
    * Starts the execution. This returns only after the thread has started and [[QueryStartedEvent]]
    * has been posted to all the listeners.
@@ -391,8 +396,7 @@ abstract class StreamExecution(
           val checkpointPath = new Path(resolvedCheckpointRoot)
           try {
             logInfo(s"Deleting checkpoint $checkpointPath.")
-            val fs = checkpointPath.getFileSystem(sparkSession.sessionState.newHadoopConf())
-            fs.delete(checkpointPath, true)
+            fileManager.delete(checkpointPath)
           } catch {
             case NonFatal(e) =>
               // Deleting temp checkpoint folder is best effort, don't throw non fatal exceptions
