@@ -201,6 +201,11 @@ private[hive] class HiveClientImpl(
     hiveConf
   }
 
+  private def getHive(conf: HiveConf): Hive = version match {
+    case hive.v2_3_8 => Hive.getWithoutRegisterFns(conf)
+    case _ => Hive.get(conf)
+  }
+
   override val userName = UserGroupInformation.getCurrentUser.getShortUserName
 
   override def getConf(key: String, defaultValue: String): String = {
@@ -255,7 +260,7 @@ private[hive] class HiveClientImpl(
     if (clientLoader.cachedHive != null) {
       clientLoader.cachedHive.asInstanceOf[Hive]
     } else {
-      val c = Hive.get(conf)
+      val c = getHive(conf)
       clientLoader.cachedHive = c
       c
     }
@@ -283,7 +288,7 @@ private[hive] class HiveClientImpl(
     // Set the thread local metastore client to the client associated with this HiveClientImpl.
     Hive.set(client)
     // Replace conf in the thread local Hive with current conf
-    Hive.get(conf)
+    getHive(conf)
     // setCurrentSessionState will use the classLoader associated
     // with the HiveConf in `state` to override the context class loader of the current
     // thread.
