@@ -210,6 +210,7 @@
     <arrow.version>2.0.0</arrow.version>
     <!-- org.fusesource.leveldbjni will be used except on arm64 platform. -->
     <leveldbjni.group>org.fusesource.leveldbjni</leveldbjni.group>
+    <kubernetes-client.version>4.13.2</kubernetes-client.version>
 
     <javax.servlet-api.name>javax.servlet-api</javax.servlet-api.name>
 
