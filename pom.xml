@@ -1163,6 +1163,13 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <!-- Attempt to force aws sdk version to desired -->
+      <dependency>
+       <groupId>com.amazonaws</groupId>
+       <artifactId>aws-java-sdk-bundle</artifactId>
+       <version>${aws.java.sdk.version}</version>
+       <scope>${hadoop.deps.scope}</scope>
+      </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-minikdc</artifactId>
