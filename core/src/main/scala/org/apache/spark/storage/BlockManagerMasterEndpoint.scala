@@ -846,12 +846,14 @@ private[spark] class BlockManagerInfo(
         blockStatus.remove(blockId)
       }
       if (originalLevel.useMemory) {
-        logInfo(s"Removed $blockId on ${blockManagerId.hostPort} in memory" +
+        logInfo(s"Removed $blockId (storage level: $storageLevel) on " +
+          s"${blockManagerId.hostPort} in memory" +
           s" (size: ${Utils.bytesToString(originalMemSize)}," +
           s" free: ${Utils.bytesToString(_remainingMem)})")
       }
       if (originalLevel.useDisk) {
-        logInfo(s"Removed $blockId on ${blockManagerId.hostPort} on disk" +
+        logInfo(s"Removed $blockId (storage level: $storageLevel) on " +
+          s"${blockManagerId.hostPort} on disk" +
           s" (size: ${Utils.bytesToString(originalDiskSize)})")
       }
     }

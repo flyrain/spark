@@ -800,12 +800,22 @@ private[spark] class BlockManager(
     info.synchronized {
       info.level match {
         case null =>
+          logInfo(s"blockId $blockId got empty block status")
           BlockStatus.empty
         case level =>
           val inMem = level.useMemory && memoryStore.contains(blockId)
           val onDisk = level.useDisk && diskStore.contains(blockId)
+          if (level.useMemory && !inMem) {
+            logInfo(s"block $blockId has useMemory level but can't find in memory store")
+          }
+          if (level.useDisk && !onDisk) {
+            logInfo(s"block $blockId has useDisk level but can't find in disk store")
+          }
           val deserialized = if (inMem) level.deserialized else false
           val replication = if (inMem  || onDisk) level.replication else 1
+          if (replication <= 0) {
+            logInfo(s"block $blockId has invalid replication $replication")
+          }
           val storageLevel = StorageLevel(
             useDisk = onDisk,
             useMemory = inMem,
