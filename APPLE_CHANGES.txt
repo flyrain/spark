@@ -41,6 +41,11 @@ SPARK-35131     Support early driver service clean-up during app termination
 SPARK-34549     Upgrade aws kinesis to 1.14.0 and java sdk 1.11.844
 SPARK-35280     Promote KubernetesUtils to DeveloperApi
 SPARK-35232     Nested column pruning should retain column metadata
+SPARK-35240     Use CheckpointFileManager for checkpoint file manipulation
+SPARK-35383     Improve s3a magic committer support by inferring missing configs
+SPARK-34741     MergeIntoTable should avoid ambiguous reference in UpdateAction
+SPARK-35182     Support driver-owned on-demand PVC
+SPARK-35416     Support PersistentVolumeClaim Reuse
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -202,6 +207,15 @@ SPARK-35192     Adds a new job in GitHub Actions to check the output of TPC-DS q
 SPARK-35293     Adds a new job in GitHub Actions to check the output of TPC-DS queries
 SPARK-35327     Adds a new job in GitHub Actions to check the output of TPC-DS queries
 SPARK-35327     Adds a new job in GitHub Actions to check the output of TPC-DS queries
+SPARK-35358     Increase maximum Java heap used for release build to avoid OOM
+SPARK-35375     Use Jinja2 < 3.0.0 for Python linter dependency in GA
+MINOR           Avoid some python docs where first sentence has "e.g." or similar
+SPARK-35381     Fix lambda variable name issues in nested higher order functions at R APIs
+SPARK-35382     Fix lambda variable name issues in nested DataFrame functions in Python APIs
+SPARK-35393     Recover pip packaging test in Github Actions
+SPARK-35405     Submitting Applications documentation has outdated information about K8s client mode support
+SPARK-35413     Use the SHA of the latest commit when checking out databricks/tpcds-kit
+SPARK-35359     Insert data with char/varchar datatype will fail when data length exceed length limitation
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -261,3 +275,7 @@ MINOR           Upgrade parquet to 1.10.2.5-apple to bring PARQUET-2044
 MINOR           Bump Hive version to 2.3.8.4-apple
 MINOR           Bump Hive version to 2.3.8.5-apple (#1041)
 rdar://77576428 Spark 3.x on compute unable to talk to hive running 1.2.2 (#1042)
+MINOR           add parquet-kms-apple
+MINOR           bump parquet to 1.10.2.6-apple
+rdar://78012262 Add aws-java-sdk-bundle direct dependency
+rdar://75851236 Add more log for debugging
