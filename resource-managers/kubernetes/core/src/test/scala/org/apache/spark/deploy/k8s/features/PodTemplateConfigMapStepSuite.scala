@@ -78,6 +78,7 @@ class PodTemplateConfigMapStepSuite extends SparkFunSuite {
     assert(resources.head.isInstanceOf[ConfigMap])
     val configMap = resources.head.asInstanceOf[ConfigMap]
     assert(configMap.getData.size() === 1)
+    assert(configMap.getImmutable())
     assert(configMap.getData.containsKey(Constants.POD_TEMPLATE_KEY))
     assert(configMap.getData.containsValue("pod-template-contents"))
 
