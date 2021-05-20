@@ -73,6 +73,7 @@ class ProcedureParameterImpl implements ProcedureParameter {
 
   @Override
   public String toString() {
-    return String.format("ProcedureParameter(name='%s', type=%s, required=%b)", name, dataType, required);
+    return String.format("ProcedureParameter(name='%s', type=%s, required=%b)", name, dataType,
+        required);
   }
 }

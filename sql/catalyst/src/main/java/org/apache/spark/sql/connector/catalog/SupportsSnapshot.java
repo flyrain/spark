@@ -25,8 +25,8 @@ import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 public interface SupportsSnapshot extends TableCatalog {
 
   /**
-   * Creates a table based off of an already existing table which can be modified without modifying the original
-   * table.
+   * Creates a table based off of an already existing table which can be modified without modifying
+   * the original table.
    *
    * @param sourceCatalog Catalog containing the original table
    * @param sourceIdent the identifier for the original table
