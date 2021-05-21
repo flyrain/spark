@@ -2918,6 +2918,14 @@ class DataSourceV2SQLSuite
       }
     }
   }
+
+  test("OPTIMIZE is not supported for regular tables") {
+    val t = "testcat.ns1.ns2.tbl"
+    withTable(t) {
+      sql(s"CREATE TABLE $t (id bigint, data string, p int) USING foo PARTITIONED BY (id, p)")
+      assertAnalysisError(s"OPTIMIZE $t WHERE id = 2", "OPTIMIZE is not supported by table")
+    }
+  }
 }
 
 

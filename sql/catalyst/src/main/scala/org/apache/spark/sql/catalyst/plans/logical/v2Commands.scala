@@ -27,6 +27,7 @@ import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, ColumnChange}
 import org.apache.spark.sql.connector.expressions.{SortOrder, Transform}
 import org.apache.spark.sql.connector.write.Write
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{DataType, MetadataBuilder, StringType, StructType}
 
 /**
@@ -774,3 +775,29 @@ case class SnapshotTable(
     tableCatalog: SupportsSnapshot,
     ident: Identifier,
     properties: Map[String, String]) extends Command
+
+case class OptimizeTable(
+    table: NamedRelation,
+    predicate: Expression,
+    strategy: OptimizeStrategy,
+    options: Map[String, String]) extends Command {
+
+  override lazy val resolved: Boolean = table.resolved && predicate.resolved
+
+  private lazy val resolvedOutput = table match {
+    case DataSourceV2Relation(t: SupportsOptimize, _, _, _, _) =>
+      t.optimizeOutput.toAttributes
+    case _ =>
+      Seq.empty[AttributeReference]
+  }
+
+  override def inputSet: AttributeSet = AttributeSet(table.output)
+
+  override def output: Seq[Attribute] = if (resolved) resolvedOutput else Seq.empty
+}
+
+sealed trait OptimizeStrategy
+
+case object BinPack extends OptimizeStrategy
+
+case class OrderBy(ordering: Seq[SortOrder]) extends OptimizeStrategy

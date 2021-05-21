@@ -196,6 +196,7 @@ Below is a list of all the keywords in Spark SQL.
 |AT|non-reserved|non-reserved|reserved|
 |AUTHORIZATION|reserved|non-reserved|reserved|
 |BETWEEN|non-reserved|non-reserved|reserved|
+|BINPACK|non-reserved|non-reserved|non-reserved|
 |BOTH|reserved|non-reserved|reserved|
 |BUCKET|non-reserved|non-reserved|non-reserved|
 |BUCKETS|non-reserved|non-reserved|non-reserved|
@@ -331,6 +332,7 @@ Below is a list of all the keywords in Spark SQL.
 |OF|non-reserved|non-reserved|reserved|
 |ON|reserved|strict-non-reserved|reserved|
 |ONLY|reserved|non-reserved|reserved|
+|OPTIMIZE|non-reserved|non-reserved|non-reserved|
 |OPTION|non-reserved|non-reserved|non-reserved|
 |OPTIONS|non-reserved|non-reserved|non-reserved|
 |OR|reserved|non-reserved|reserved|

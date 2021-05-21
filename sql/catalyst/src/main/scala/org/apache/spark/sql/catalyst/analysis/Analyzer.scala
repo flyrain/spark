@@ -1040,6 +1040,17 @@ class Analyzer(override val catalogManager: CatalogManager)
           case _ => write
         }
 
+      case optimize: OptimizeTable =>
+        optimize.table match {
+          case u: UnresolvedRelation if !u.isStreaming =>
+            lookupV2Relation(u.multipartIdentifier, u.options, false).map {
+              case r: DataSourceV2Relation => optimize.copy(table = r)
+              case other => throw new IllegalStateException(
+                "[BUG] unexpected plan returned by `lookupV2Relation`: " + other)
+            }.getOrElse(optimize)
+          case _ => optimize
+        }
+
       case alter @ AlterTable(_, _, u: UnresolvedV2Relation, _) =>
         CatalogV2Util.loadRelation(u.catalog, u.tableName)
           .map(rel => alter.copy(table = rel))
@@ -1140,6 +1151,23 @@ class Analyzer(override val catalogManager: CatalogManager)
                   "[BUG] unexpected plan returned by `lookupRelation`: " + other)
               }.getOrElse(write)
           case _ => write
+        }
+
+      case optimize: OptimizeTable =>
+        optimize.table match {
+          case u: UnresolvedRelation if !u.isStreaming =>
+            lookupRelation(u.multipartIdentifier, u.options, false)
+              .map(EliminateSubqueryAliases(_))
+              .map {
+                case v: View => optimize.failAnalysis(
+                  s"OPTIMIZE is not supported for views. View: ${v.desc.identifier}.")
+                case u: UnresolvedCatalogRelation => optimize.failAnalysis(
+                  "Cannot OPTIMIZE v1 table: " + u.tableMeta.identifier)
+                case r: DataSourceV2Relation => optimize.copy(table = r)
+                case other => throw new IllegalStateException(
+                  "[BUG] unexpected plan returned by `lookupRelation`: " + other)
+              }.getOrElse(optimize)
+          case _ => optimize
         }
 
       case u: UnresolvedRelation =>
@@ -1650,6 +1678,9 @@ class Analyzer(override val catalogManager: CatalogManager)
         // The delete condition of `OverwriteByExpression` will be passed to the table
         // implementation and should be resolved based on the table schema.
         o.copy(deleteExpr = resolveExpressionBottomUp(o.deleteExpr, o.table))
+
+      case o: OptimizeTable if o.table.resolved =>
+        o.copy(predicate = resolveExpressionBottomUp(o.predicate, o.table))
 
       case m @ MergeIntoTable(targetTable, sourceTable, _, _, _) if !m.duplicateResolved =>
         m.copy(sourceTable = dedupRight(targetTable, sourceTable))

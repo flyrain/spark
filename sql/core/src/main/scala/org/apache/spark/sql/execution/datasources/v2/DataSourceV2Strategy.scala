@@ -32,6 +32,7 @@ import org.apache.spark.sql.connector.write.V1Write
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, LocalTableScanExec, ProjectExec, RowDataSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 import org.apache.spark.sql.execution.streaming.continuous.{WriteToContinuousDataSource, WriteToContinuousDataSourceExec}
+import org.apache.spark.sql.sources
 import org.apache.spark.sql.sources.{BaseRelation, TableScan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.storage.StorageLevel
@@ -417,6 +418,23 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
     case MergeInto(mergeIntoParams, output, child) =>
       MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil
 
+    case OptimizeTable(relation, predicate, strategy, options) =>
+      val (table, output) = relation match {
+        case DataSourceV2Relation(table, output, _, _, _) =>
+          table match {
+            case optimizable: SupportsOptimize =>
+              (optimizable, output)
+            case other =>
+              throw new AnalysisException(s"OPTIMIZE is not supported by table $other")
+          }
+        case _ =>
+          throw new AnalysisException("OPTIMIZE is only supported for v2 tables")
+      }
+      val predicates = splitConjunctivePredicates(predicate)
+      val normalizedPredicates = DataSourceStrategy.normalizeExprs(predicates, output)
+      val filters = toDataSourceFilters(normalizedPredicates)
+      OptimizeTableExec(table, filters, strategy, options) :: Nil
+
     case _ => Nil
   }
 
@@ -426,5 +444,19 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
       values(index) = exprs(index).eval()
     }
     new GenericInternalRow(values)
+  }
+
+  private def toDataSourceFilters(predicates: Seq[Expression]): Seq[sources.Filter] = {
+    predicates.flatMap { predicate =>
+      val translatedFilter = DataSourceStrategy.translateFilter(
+        predicate,
+        supportNestedPredicatePushdown = true)
+
+      if (translatedFilter.isEmpty) {
+        throw new AnalysisException(s"Could not translate $predicate to a data source filter")
+      }
+
+      translatedFilter
+    }
   }
 }

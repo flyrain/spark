@@ -3629,6 +3629,30 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
   }
 
   /**
+   * Create an [[OptimizeTable]] command.
+   */
+  override def visitOptimizeTable(ctx: OptimizeTableContext): OptimizeTable = withOrigin(ctx) {
+    val table = UnresolvedRelation(visitMultipartIdentifier(ctx.multipartIdentifier))
+    val predicate = Option(ctx.whereClause).map(clause => expression(clause.booleanExpression))
+    val strategy = Option(ctx.optimizeStrategy).map(visitOptimizeStrategy).getOrElse(BinPack)
+    val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
+    OptimizeTable(table, predicate.getOrElse(Literal.TrueLiteral), strategy, options)
+  }
+
+  override def visitOptimizeStrategy(
+      ctx: OptimizeStrategyContext): OptimizeStrategy = withOrigin(ctx) {
+
+    if (ctx.BINPACK != null) {
+      BinPack
+    } else {
+      val requestedOrdering = Option(ctx.writeOrder)
+        .map(_.fields.asScala.map(visitWriteOrderField))
+        .getOrElse(Seq.empty)
+      OrderBy(requestedOrdering)
+    }
+  }
+
+  /**
    * Create a [[DescribeColumn]] or [[DescribeRelation]] commands.
    */
   override def visitDescribeRelation(ctx: DescribeRelationContext): LogicalPlan = withOrigin(ctx) {
