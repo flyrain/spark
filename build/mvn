@@ -84,6 +84,8 @@ install_app() {
           exit 2
         fi
       fi
+    else
+      echo "Skipping checksum because shasum is not installed." 1>&2
     fi
 
     cd "${_DIR}" && tar -xzf "${local_tarball}"
