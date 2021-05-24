@@ -221,14 +221,14 @@ class BasicDriverFeatureStepSuite extends SparkFunSuite {
     val driverConf1 = KubernetesTestConf.createDriverConf(sparkConf)
     val pod1 = new BasicDriverFeatureStep(driverConf1).configurePod(initPod)
     val portMap1 =
-      pod1.container.getPorts.asScala.map { cp => (cp.getName -> cp.getContainerPort) }.toMap
+      pod1.containers.head.getPorts.asScala.map { cp => (cp.getName -> cp.getContainerPort) }.toMap
     assert(portMap1(BLOCK_MANAGER_PORT_NAME) === 1234, s"fallback to $BLOCK_MANAGER_PORT.key")
 
     val driverConf2 =
       KubernetesTestConf.createDriverConf(sparkConf.set(DRIVER_BLOCK_MANAGER_PORT, 1235))
     val pod2 = new BasicDriverFeatureStep(driverConf2).configurePod(initPod)
     val portMap2 =
-      pod2.container.getPorts.asScala.map { cp => (cp.getName -> cp.getContainerPort) }.toMap
+      pod2.containers.head.getPorts.asScala.map { cp => (cp.getName -> cp.getContainerPort) }.toMap
     assert(portMap2(BLOCK_MANAGER_PORT_NAME) === 1235)
   }
 

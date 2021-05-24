@@ -358,13 +358,13 @@ class BasicExecutorFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
       val sm = new SecurityManager(baseConf)
       val step1 =
         new BasicExecutorFeatureStep(newExecutorConf(), sm, defaultProfile)
-      val containerPort1 = step1.configurePod(initPod).container.getPorts.get(0)
+      val containerPort1 = step1.configurePod(initPod).containers.head.getPorts.get(0)
       assert(containerPort1.getContainerPort === DEFAULT_BLOCKMANAGER_PORT,
         s"should use port no. $DEFAULT_BLOCKMANAGER_PORT as default")
 
       baseConf.set(BLOCK_MANAGER_PORT, 12345)
       val step2 = new BasicExecutorFeatureStep(newExecutorConf(), sm, defaultProfile)
-      val containerPort2 = step2.configurePod(initPod).container.getPorts.get(0)
+      val containerPort2 = step2.configurePod(initPod).containers.head.getPorts.get(0)
       assert(containerPort2.getContainerPort === 12345)
 
       baseConf.set(BLOCK_MANAGER_PORT, 1000)
@@ -375,7 +375,7 @@ class BasicExecutorFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
 
       baseConf.set(BLOCK_MANAGER_PORT, 0)
       val step3 = new BasicExecutorFeatureStep(newExecutorConf(), sm, defaultProfile)
-      assert(step3.configurePod(initPod).container.getPorts.isEmpty, "random port")
+      assert(step3.configurePod(initPod).containers.head.getPorts.isEmpty, "random port")
     } finally {
       baseConf.remove(BLOCK_MANAGER_PORT)
     }
