@@ -293,9 +293,9 @@ private[ui] class StagePage(parent: StagesTab, store: AppStatusStore, ajaxEnable
         <div id="parent-container">
           {
             <script src={UIUtils.prependBaseUri(request, "/static/utils.js")}></script> ++
-            <script src={UIUtils.prependBaseUri(request, "/static/stagepage.js")}></script> ++
             <script src={UIUtils.prependBaseUri(request,
-              "/static/stagespage-template.js")}></script> ++
+                "/static/stagespage-template.js")}></script> ++
+            <script src={UIUtils.prependBaseUri(request, "/static/stagepage.js")}></script> ++
             {if (!ajaxEnabled) preLoadedDataScript else Seq.empty} ++
             <script>setAjaxEnabled({ajaxEnabled})</script>
           }

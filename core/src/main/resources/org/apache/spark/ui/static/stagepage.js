@@ -621,7 +621,7 @@ $(document).ready(function () {
         function printStageData(executorSummaryDataJSON, taskMetricsJSON, stageDataJSON, activeTasksJSON) {
             // rendering the UI page
 
-            tasksSummary.append(Mustache.render($(template).filter("#stages-summary-template").html()));
+            tasksSummary.append(Mustache.render($(stagesSummaryTemplate).filter("#stages-summary-template").html()));
 
             $("#additionalMetrics").click(function(){
                 $("#arrowtoggle1").toggleClass("arrow-open arrow-closed");
@@ -675,390 +675,388 @@ $(document).ready(function () {
             var accumulatorTable = stageDataJSON.accumulatorUpdates.filter(accumUpdate =>
                 !(accumUpdate.name).toString().includes("internal."));
 
-                printTaskMetricsTable(taskMetricsJSON, dataToShow);
+            printTaskMetricsTable(taskMetricsJSON, dataToShow);
 
-                // building accumulator update table
-                var accumulatorConf = {
-                    "data": accumulatorTable,
-                    "columns": [
-                        {data : "id"},
-                        {data : "name"},
-                        {data : "value"}
-                    ],
-                    "paging": false,
-                    "searching": false,
-                    "order": [[0, "asc"]],
-                    "bAutoWidth": false
-                };
-                $("#accumulator-table").DataTable(accumulatorConf);
+            // building accumulator update table
+            var accumulatorConf = {
+                "data": accumulatorTable,
+                "columns": [
+                    {data : "id"},
+                    {data : "name"},
+                    {data : "value"}
+                ],
+                "paging": false,
+                "searching": false,
+                "order": [[0, "asc"]],
+                "bAutoWidth": false
+            };
+            $("#accumulator-table").DataTable(accumulatorConf);
 
-                // building tasks table that uses server side functionality
-                var totalTasksToShow = stageDataJSON.numCompleteTasks + stageDataJSON.numActiveTasks +
-                    stageDataJSON.numKilledTasks + stageDataJSON.numFailedTasks;
-                var taskTable = "#active-tasks-table";
-                var taskConf = {
-                    "paging": true,
-                    "info": true,
-                    "processing": true,
-                    "lengthMenu": [[20, 40, 60, 100, totalTasksToShow], [20, 40, 60, 100, "All"]],
-                    "orderMulti": false,
-                    "bAutoWidth": false,
-                    "data": activeTasksJSON,
-                    "columns": [
-                        {data: function (row, type) {
-                            return type !== 'display' ? (isNaN(row.index) ? 0 : row.index ) : row.index;
-                            },
-                            name: "Index"
+            // building tasks table that uses server side functionality
+            var totalTasksToShow = stageDataJSON.numCompleteTasks + stageDataJSON.numActiveTasks +
+                stageDataJSON.numKilledTasks + stageDataJSON.numFailedTasks;
+            var taskTable = "#active-tasks-table";
+            var taskConf = {
+                "paging": true,
+                "info": true,
+                "processing": true,
+                "lengthMenu": [[20, 40, 60, 100, totalTasksToShow], [20, 40, 60, 100, "All"]],
+                "orderMulti": false,
+                "bAutoWidth": false,
+                "data": activeTasksJSON,
+                "columns": [
+                    {data: function (row, type) {
+                        return type !== 'display' ? (isNaN(row.index) ? 0 : row.index ) : row.index;
                         },
-                        {data : "taskId", name: "ID"},
-                        {data : "attempt", name: "Attempt"},
-                        {data : "status", name: "Status"},
-                        {data : "taskLocality", name: "Locality Level"},
-                        {data : "executorId", name: "Executor ID"},
-                        {data : "host", name: "Host"},
-                        {data : "executorLogs", name: "Logs", render: formatLogsCells},
-                        {data : "launchTime", name: "Launch Time", render: formatDate},
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.executorRunTime) {
-                                    return type === 'display' ? formatDuration(row.taskMetrics.executorRunTime) : row.taskMetrics.executorRunTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Duration"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.jvmGcTime) {
-                                    return type === 'display' ? formatDuration(row.taskMetrics.jvmGcTime) : row.taskMetrics.jvmGcTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "GC Time"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.schedulerDelay) {
-                                    return type === 'display' ? formatDuration(row.schedulerDelay) : row.schedulerDelay;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Scheduler Delay"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.executorDeserializeTime) {
-                                    return type === 'display' ? formatDuration(row.taskMetrics.executorDeserializeTime) : row.taskMetrics.executorDeserializeTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Task Deserialization Time"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.shuffleReadMetrics) {
-                                    return type === 'display' ? formatDuration(row.taskMetrics.shuffleReadMetrics.fetchWaitTime) : row.taskMetrics.shuffleReadMetrics.fetchWaitTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Shuffle Read Blocked Time"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.shuffleReadMetrics) {
-                                    return type === 'display' ? formatBytes(row.taskMetrics.shuffleReadMetrics.remoteBytesRead, type) : row.taskMetrics.shuffleReadMetrics.remoteBytesRead;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Shuffle Remote Reads"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.resultSerializationTime) {
-                                    return type === 'display' ? formatDuration(row.taskMetrics.resultSerializationTime) : row.taskMetrics.resultSerializationTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Result Serialization Time"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.gettingResultTime) {
-                                    return type === 'display' ? formatDuration(row.gettingResultTime) : row.gettingResultTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Getting Result Time"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.peakExecutionMemory) {
-                                    return type === 'display' ? formatBytes(row.taskMetrics.peakExecutionMemory, type) : row.taskMetrics.peakExecutionMemory;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Peak Execution Memory"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (accumulatorTable.length > 0 && row.accumulatorUpdates.length > 0) {
-                                    var allAccums = "";
-                                    row.accumulatorUpdates.forEach(function(accumulator) {
-                                        allAccums += accumulator.name + ': ' + accumulator.update + "<BR>";
-                                    });
-                                    return allAccums;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Accumulators"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.inputMetrics && row.taskMetrics.inputMetrics.bytesRead > 0) {
-                                    if (type === 'display') {
-                                        return formatBytes(row.taskMetrics.inputMetrics.bytesRead, type) + " / " + row.taskMetrics.inputMetrics.recordsRead;
-                                    } else {
-                                        return row.taskMetrics.inputMetrics.bytesRead + " / " + row.taskMetrics.inputMetrics.recordsRead;
-                                    }
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Input Size / Records"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.outputMetrics && row.taskMetrics.outputMetrics.bytesWritten > 0) {
-                                    if (type === 'display') {
-                                        return formatBytes(row.taskMetrics.outputMetrics.bytesWritten, type) + " / " + row.taskMetrics.outputMetrics.recordsWritten;
-                                    } else {
-                                        return row.taskMetrics.outputMetrics.bytesWritten + " / " + row.taskMetrics.outputMetrics.recordsWritten;
-                                    }
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Output Size / Records"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.shuffleWriteMetrics && row.taskMetrics.shuffleWriteMetrics.writeTime > 0) {
-                                    return type === 'display' ? formatDuration(parseInt(row.taskMetrics.shuffleWriteMetrics.writeTime) / 1000000.0) : row.taskMetrics.shuffleWriteMetrics.writeTime;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Shuffle Write Time"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.shuffleWriteMetrics && row.taskMetrics.shuffleWriteMetrics.bytesWritten > 0) {
-                                    if (type === 'display') {
-                                        return formatBytes(row.taskMetrics.shuffleWriteMetrics.bytesWritten, type) + " / " + row.taskMetrics.shuffleWriteMetrics.recordsWritten;
-                                    } else {
-                                        return row.taskMetrics.shuffleWriteMetrics.bytesWritten + " / " + row.taskMetrics.shuffleWriteMetrics.recordsWritten;
-                                    }
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Shuffle Write Size / Records"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.shuffleReadMetrics &&
-                                    (row.taskMetrics.shuffleReadMetrics.localBytesRead > 0 || row.taskMetrics.shuffleReadMetrics.remoteBytesRead > 0)) {
-                                    var totalBytesRead = parseInt(row.taskMetrics.shuffleReadMetrics.localBytesRead) + parseInt(row.taskMetrics.shuffleReadMetrics.remoteBytesRead);
-                                    if (type === 'display') {
-                                        return formatBytes(totalBytesRead, type) + " / " + row.taskMetrics.shuffleReadMetrics.recordsRead;
-                                    } else {
-                                        return totalBytesRead + " / " + row.taskMetrics.shuffleReadMetrics.recordsRead;
-                                    }
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Shuffle Read Size / Records"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.memoryBytesSpilled && row.taskMetrics.memoryBytesSpilled > 0) {
-                                    return type === 'display' ? formatBytes(row.taskMetrics.memoryBytesSpilled, type) : row.taskMetrics.memoryBytesSpilled;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Spill (Memory)"
-                        },
-                        {
-                            data : function (row, type) {
-                                if (row.taskMetrics && row.taskMetrics.diskBytesSpilled && row.taskMetrics.diskBytesSpilled > 0) {
-                                    return type === 'display' ? formatBytes(row.taskMetrics.diskBytesSpilled, type) : row.taskMetrics.diskBytesSpilled;
-                                } else {
-                                    return "";
-                                }
-                            },
-                            name: "Spill (Disk)"
-                        },
-                        {
-                            data : function (row, type) {
-                                var msg = row.errorMessage;
-                                if (typeof msg === 'undefined' || msg === null) {
-                                    return "";
-                                } else {
-                                    var indexOfLineSeparator = msg.indexOf("\n");
-                                    var formHead = indexOfLineSeparator > 0 ? msg.substring(0, indexOfLineSeparator) : (msg.length > 100 ? msg.substring(0, 100) : msg);
-                                    var form = "<span onclick=\"this.parentNode.querySelector('.stacktrace-details').classList.toggle('collapsed')\" class=\"expand-details\">+details</span>";
-                                    var formMsg = "<div class=\"stacktrace-details collapsed\"><pre>" + row.errorMessage + "</pre></div>";
-                                    return formHead + form + formMsg;
-                                }
-                            },
-                            name: "Errors"
-                        }
-                    ],
-                    "columnDefs": [
-                        { "visible": false, "targets": 11 },
-                        { "visible": false, "targets": 12 },
-                        { "visible": false, "targets": 13 },
-                        { "visible": false, "targets": 14 },
-                        { "visible": false, "targets": 15 },
-                        { "visible": false, "targets": 16 },
-                        { "visible": false, "targets": 17 },
-                        { "visible": false, "targets": 18 },
-                        { "visible": false, "targets": 21 }
-                    ],
-                    "deferRender": true
-                };
-                if (getAjaxEnabled()) {
-                    var taskTableAjaxConf = {
-                        "url": endPoint + "/" + stageAttemptId + "/taskTable",
-                        "data": function (data) {
-                            var columnIndexToSort = 0;
-                            var columnNameToSort = "Index";
-                            if (data.order[0].column && data.order[0].column != "") {
-                                columnIndexToSort = parseInt(data.order[0].column);
-                                columnNameToSort = data.columns[columnIndexToSort].name;
-                            }
-                            delete data.columns;
-                            data.numTasks = totalTasksToShow;
-                            data.columnIndexToSort = columnIndexToSort;
-                            data.columnNameToSort = columnNameToSort;
-                        },
-                        "dataSrc": function (jsons) {
-                            var jsonStr = JSON.stringify(jsons);
-                            var tasksToShow = JSON.parse(jsonStr);
-                            return tasksToShow.aaData;
-                        },
-                        "error": function (jqXHR, textStatus, errorThrown) {
-                            alert("Unable to connect to the server. Looks like the Spark " +
-                              "application must have ended. Please Switch to the history UI.");
-                            $("#active-tasks-table_processing").css("display","none");
-                        }
-                    }
-                    taskConf.ajax = taskTableAjaxConf
-                    delete taskConf.data
-                }
-                taskTableSelector = $(taskTable).DataTable(taskConf);
-                $('#active-tasks-table_filter input').unbind();
-                var searchEvent;
-                $('#active-tasks-table_filter input').bind('keyup', function(e) {
-                  if (typeof searchEvent !== 'undefined') {
-                    window.clearTimeout(searchEvent);
-                  }
-                  var value = this.value;
-                  searchEvent = window.setTimeout(function(){
-                    taskTableSelector.search( value ).draw();}, 500);
-                });
-                reselectCheckboxesBasedOnTaskTableState();
-
-                // hide or show columns dynamically event
-                $('input.toggle-vis').on('click', function(e){
-                    // Get the column
-                    var para = $(this).attr('data-column');
-                    if (para == "0") {
-                        var allColumns = taskTableSelector.columns(optionalColumns);
-                        var executorAllColumns = executorSummaryTableSelector.columns(executorOptionalColumns);
-                        if ($(this).is(":checked")) {
-                            $(".toggle-vis").prop('checked', true);
-                            allColumns.visible(true);
-                            executorAllColumns.visible(true);
-                            createDataTableForTaskSummaryMetricsTable(taskSummaryMetricsTableArray);
-                        } else {
-                            $(".toggle-vis").prop('checked', false);
-                            allColumns.visible(false);
-                            executorAllColumns.visible(false);
-                            var taskSummaryMetricsTableFilteredArray =
-                                taskSummaryMetricsTableArray.filter(row => row.checkboxId < 11);
-                            createDataTableForTaskSummaryMetricsTable(taskSummaryMetricsTableFilteredArray);
-                        }
-                    } else {
-                        var dataMetricsType = $(this).attr("data-metrics-type");
-                        if (dataMetricsType === 'task') {
-                            var column = taskTableSelector.column(para);
-                            // Toggle the visibility
-                            column.visible(!column.visible());
-                            var taskSummaryMetricsTableFilteredArray = [];
-                            if ($(this).is(":checked")) {
-                                taskSummaryMetricsTableCurrentStateArray.push(taskSummaryMetricsTableArray.filter(row => (row.checkboxId).toString() == para)[0]);
-                                taskSummaryMetricsTableFilteredArray = taskSummaryMetricsTableCurrentStateArray.slice();
+                        name: "Index"
+                    },
+                    {data : "taskId", name: "ID"},
+                    {data : "attempt", name: "Attempt"},
+                    {data : "status", name: "Status"},
+                    {data : "taskLocality", name: "Locality Level"},
+                    {data : "executorId", name: "Executor ID"},
+                    {data : "host", name: "Host"},
+                    {data : "executorLogs", name: "Logs", render: formatLogsCells},
+                    {data : "launchTime", name: "Launch Time", render: formatDate},
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.executorRunTime) {
+                                return type === 'display' ? formatDuration(row.taskMetrics.executorRunTime) : row.taskMetrics.executorRunTime;
                             } else {
-                                taskSummaryMetricsTableFilteredArray =
-                                    taskSummaryMetricsTableCurrentStateArray.filter(row => (row.checkboxId).toString() != para);
+                                return "";
                             }
-                            createDataTableForTaskSummaryMetricsTable(taskSummaryMetricsTableFilteredArray);
-                        }
-                        if (dataMetricsType === "executor") {
-                            var column = executorSummaryTableSelector.column(para);
-                            column.visible(!column.visible());
-                        }
+                        },
+                        name: "Duration"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.jvmGcTime) {
+                                return type === 'display' ? formatDuration(row.taskMetrics.jvmGcTime) : row.taskMetrics.jvmGcTime;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "GC Time"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.schedulerDelay) {
+                                return type === 'display' ? formatDuration(row.schedulerDelay) : row.schedulerDelay;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Scheduler Delay"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.executorDeserializeTime) {
+                                return type === 'display' ? formatDuration(row.taskMetrics.executorDeserializeTime) : row.taskMetrics.executorDeserializeTime;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Task Deserialization Time"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.shuffleReadMetrics) {
+                                return type === 'display' ? formatDuration(row.taskMetrics.shuffleReadMetrics.fetchWaitTime) : row.taskMetrics.shuffleReadMetrics.fetchWaitTime;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Shuffle Read Blocked Time"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.shuffleReadMetrics) {
+                                return type === 'display' ? formatBytes(row.taskMetrics.shuffleReadMetrics.remoteBytesRead, type) : row.taskMetrics.shuffleReadMetrics.remoteBytesRead;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Shuffle Remote Reads"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.resultSerializationTime) {
+                                return type === 'display' ? formatDuration(row.taskMetrics.resultSerializationTime) : row.taskMetrics.resultSerializationTime;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Result Serialization Time"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.gettingResultTime) {
+                                return type === 'display' ? formatDuration(row.gettingResultTime) : row.gettingResultTime;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Getting Result Time"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.peakExecutionMemory) {
+                                return type === 'display' ? formatBytes(row.taskMetrics.peakExecutionMemory, type) : row.taskMetrics.peakExecutionMemory;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Peak Execution Memory"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (accumulatorTable.length > 0 && row.accumulatorUpdates.length > 0) {
+                                var allAccums = "";
+                                row.accumulatorUpdates.forEach(function(accumulator) {
+                                    allAccums += accumulator.name + ': ' + accumulator.update + "<BR>";
+                                });
+                                return allAccums;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Accumulators"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.inputMetrics && row.taskMetrics.inputMetrics.bytesRead > 0) {
+                                if (type === 'display') {
+                                    return formatBytes(row.taskMetrics.inputMetrics.bytesRead, type) + " / " + row.taskMetrics.inputMetrics.recordsRead;
+                                } else {
+                                    return row.taskMetrics.inputMetrics.bytesRead + " / " + row.taskMetrics.inputMetrics.recordsRead;
+                                }
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Input Size / Records"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.outputMetrics && row.taskMetrics.outputMetrics.bytesWritten > 0) {
+                                if (type === 'display') {
+                                    return formatBytes(row.taskMetrics.outputMetrics.bytesWritten, type) + " / " + row.taskMetrics.outputMetrics.recordsWritten;
+                                } else {
+                                    return row.taskMetrics.outputMetrics.bytesWritten + " / " + row.taskMetrics.outputMetrics.recordsWritten;
+                                }
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Output Size / Records"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.shuffleWriteMetrics && row.taskMetrics.shuffleWriteMetrics.writeTime > 0) {
+                                return type === 'display' ? formatDuration(parseInt(row.taskMetrics.shuffleWriteMetrics.writeTime) / 1000000.0) : row.taskMetrics.shuffleWriteMetrics.writeTime;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Shuffle Write Time"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.shuffleWriteMetrics && row.taskMetrics.shuffleWriteMetrics.bytesWritten > 0) {
+                                if (type === 'display') {
+                                    return formatBytes(row.taskMetrics.shuffleWriteMetrics.bytesWritten, type) + " / " + row.taskMetrics.shuffleWriteMetrics.recordsWritten;
+                                } else {
+                                    return row.taskMetrics.shuffleWriteMetrics.bytesWritten + " / " + row.taskMetrics.shuffleWriteMetrics.recordsWritten;
+                                }
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Shuffle Write Size / Records"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.shuffleReadMetrics &&
+                                (row.taskMetrics.shuffleReadMetrics.localBytesRead > 0 || row.taskMetrics.shuffleReadMetrics.remoteBytesRead > 0)) {
+                                var totalBytesRead = parseInt(row.taskMetrics.shuffleReadMetrics.localBytesRead) + parseInt(row.taskMetrics.shuffleReadMetrics.remoteBytesRead);
+                                if (type === 'display') {
+                                    return formatBytes(totalBytesRead, type) + " / " + row.taskMetrics.shuffleReadMetrics.recordsRead;
+                                } else {
+                                    return totalBytesRead + " / " + row.taskMetrics.shuffleReadMetrics.recordsRead;
+                                }
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Shuffle Read Size / Records"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.memoryBytesSpilled && row.taskMetrics.memoryBytesSpilled > 0) {
+                                return type === 'display' ? formatBytes(row.taskMetrics.memoryBytesSpilled, type) : row.taskMetrics.memoryBytesSpilled;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Spill (Memory)"
+                    },
+                    {
+                        data : function (row, type) {
+                            if (row.taskMetrics && row.taskMetrics.diskBytesSpilled && row.taskMetrics.diskBytesSpilled > 0) {
+                                return type === 'display' ? formatBytes(row.taskMetrics.diskBytesSpilled, type) : row.taskMetrics.diskBytesSpilled;
+                            } else {
+                                return "";
+                            }
+                        },
+                        name: "Spill (Disk)"
+                    },
+                    {
+                        data : function (row, type) {
+                            var msg = row.errorMessage;
+                            if (typeof msg === 'undefined' || msg === null) {
+                                return "";
+                            } else {
+                                var indexOfLineSeparator = msg.indexOf("\n");
+                                var formHead = indexOfLineSeparator > 0 ? msg.substring(0, indexOfLineSeparator) : (msg.length > 100 ? msg.substring(0, 100) : msg);
+                                var form = "<span onclick=\"this.parentNode.querySelector('.stacktrace-details').classList.toggle('collapsed')\" class=\"expand-details\">+details</span>";
+                                var formMsg = "<div class=\"stacktrace-details collapsed\"><pre>" + row.errorMessage + "</pre></div>";
+                                return formHead + form + formMsg;
+                            }
+                        },
+                        name: "Errors"
                     }
-                });
-
-                // title number and toggle list
-                $("#summaryMetricsTitle").html("Summary Metrics for " + "<a href='#tasksTitle'>" + stageDataJSON.numCompleteTasks + " Completed Tasks" + "</a>");
-                $("#tasksTitle").html("Tasks (" + totalTasksToShow + ")");
-
-                // hide or show the accumulate update table
-                if (accumulatorTable.length == 0) {
-                    $("#accumulator-update-table").hide();
-                } else {
-                    taskTableSelector.column(18).visible(true);
-                    $("#accumulator-update-table").show();
+                ],
+                "columnDefs": [
+                    { "visible": false, "targets": 11 },
+                    { "visible": false, "targets": 12 },
+                    { "visible": false, "targets": 13 },
+                    { "visible": false, "targets": 14 },
+                    { "visible": false, "targets": 15 },
+                    { "visible": false, "targets": 16 },
+                    { "visible": false, "targets": 17 },
+                    { "visible": false, "targets": 18 },
+                    { "visible": false, "targets": 21 }
+                ],
+                "deferRender": true
+            };
+            if (getAjaxEnabled()) {
+                var taskTableAjaxConf = {
+                    "url": endPoint + "/" + stageAttemptId + "/taskTable",
+                    "data": function (data) {
+                        var columnIndexToSort = 0;
+                        var columnNameToSort = "Index";
+                        if (data.order[0].column && data.order[0].column != "") {
+                            columnIndexToSort = parseInt(data.order[0].column);
+                            columnNameToSort = data.columns[columnIndexToSort].name;
+                        }
+                        delete data.columns;
+                        data.numTasks = totalTasksToShow;
+                        data.columnIndexToSort = columnIndexToSort;
+                        data.columnNameToSort = columnNameToSort;
+                    },
+                    "dataSrc": function (jsons) {
+                        var jsonStr = JSON.stringify(jsons);
+                        var tasksToShow = JSON.parse(jsonStr);
+                        return tasksToShow.aaData;
+                    },
+                    "error": function (jqXHR, textStatus, errorThrown) {
+                        alert("Unable to connect to the server. Looks like the Spark " +
+                          "application must have ended. Please Switch to the history UI.");
+                        $("#active-tasks-table_processing").css("display","none");
+                    }
                 }
-                // Showing relevant stage data depending on stage type for task table and executor
-                // summary table
-                taskTableSelector.column(19).visible(dataToShow.showInputData);
-                taskTableSelector.column(20).visible(dataToShow.showOutputData);
-                taskTableSelector.column(22).visible(dataToShow.showShuffleWriteData);
-                taskTableSelector.column(23).visible(dataToShow.showShuffleReadData);
-                taskTableSelector.column(24).visible(dataToShow.showBytesSpilledData);
-                taskTableSelector.column(25).visible(dataToShow.showBytesSpilledData);
+                taskConf.ajax = taskTableAjaxConf
+                delete taskConf.data
+            }
+            taskTableSelector = $(taskTable).DataTable(taskConf);
+            $('#active-tasks-table_filter input').unbind();
+            var searchEvent;
+            $('#active-tasks-table_filter input').bind('keyup', function(e) {
+              if (typeof searchEvent !== 'undefined') {
+                window.clearTimeout(searchEvent);
+              }
+              var value = this.value;
+              searchEvent = window.setTimeout(function(){
+                taskTableSelector.search( value ).draw();}, 500);
+            });
+            reselectCheckboxesBasedOnTaskTableState();
 
-                if (DB) {
-                    if (DB.getItem("arrowtoggle1class") !== null &&
-                        DB.getItem("arrowtoggle1class").includes("arrow-open")) {
-                        $("#arrowtoggle1").toggleClass("arrow-open arrow-closed");
-                        $("#toggle-metrics").toggleClass("d-none");
+            // hide or show columns dynamically event
+            $('input.toggle-vis').on('click', function(e){
+                // Get the column
+                var para = $(this).attr('data-column');
+                if (para == "0") {
+                    var allColumns = taskTableSelector.columns(optionalColumns);
+                    var executorAllColumns = executorSummaryTableSelector.columns(executorOptionalColumns);
+                    if ($(this).is(":checked")) {
+                        $(".toggle-vis").prop('checked', true);
+                        allColumns.visible(true);
+                        executorAllColumns.visible(true);
+                        createDataTableForTaskSummaryMetricsTable(taskSummaryMetricsTableArray);
+                    } else {
+                        $(".toggle-vis").prop('checked', false);
+                        allColumns.visible(false);
+                        executorAllColumns.visible(false);
+                        var taskSummaryMetricsTableFilteredArray =
+                            taskSummaryMetricsTableArray.filter(row => row.checkboxId < 11);
+                        createDataTableForTaskSummaryMetricsTable(taskSummaryMetricsTableFilteredArray);
                     }
-                    if (DB.getItem("arrowtoggle2class") !== null &&
-                        DB.getItem("arrowtoggle2class").includes("arrow-open")) {
-                        $("#arrowtoggle2").toggleClass("arrow-open arrow-closed");
-                        $("#toggle-aggregatedMetrics").toggleClass("d-none");
+                } else {
+                    var dataMetricsType = $(this).attr("data-metrics-type");
+                    if (dataMetricsType === 'task') {
+                        var column = taskTableSelector.column(para);
+                        // Toggle the visibility
+                        column.visible(!column.visible());
+                        var taskSummaryMetricsTableFilteredArray = [];
+                        if ($(this).is(":checked")) {
+                            taskSummaryMetricsTableCurrentStateArray.push(taskSummaryMetricsTableArray.filter(row => (row.checkboxId).toString() == para)[0]);
+                            taskSummaryMetricsTableFilteredArray = taskSummaryMetricsTableCurrentStateArray.slice();
+                        } else {
+                            taskSummaryMetricsTableFilteredArray =
+                                taskSummaryMetricsTableCurrentStateArray.filter(row => (row.checkboxId).toString() != para);
+                        }
+                        createDataTableForTaskSummaryMetricsTable(taskSummaryMetricsTableFilteredArray);
+                    }
+                    if (dataMetricsType === "executor") {
+                        var column = executorSummaryTableSelector.column(para);
+                        column.visible(!column.visible());
                     }
                 }
             });
-        });
-    });
+
+            // title number and toggle list
+            $("#summaryMetricsTitle").html("Summary Metrics for " + "<a href='#tasksTitle'>" + stageDataJSON.numCompleteTasks + " Completed Tasks" + "</a>");
+            $("#tasksTitle").html("Tasks (" + totalTasksToShow + ")");
+
+            // hide or show the accumulate update table
+            if (accumulatorTable.length == 0) {
+                $("#accumulator-update-table").hide();
+            } else {
+                taskTableSelector.column(18).visible(true);
+                $("#accumulator-update-table").show();
+            }
+            // Showing relevant stage data depending on stage type for task table and executor
+            // summary table
+            taskTableSelector.column(19).visible(dataToShow.showInputData);
+            taskTableSelector.column(20).visible(dataToShow.showOutputData);
+            taskTableSelector.column(22).visible(dataToShow.showShuffleWriteData);
+            taskTableSelector.column(23).visible(dataToShow.showShuffleReadData);
+            taskTableSelector.column(24).visible(dataToShow.showBytesSpilledData);
+            taskTableSelector.column(25).visible(dataToShow.showBytesSpilledData);
+
+            if (DB) {
+                if (DB.getItem("arrowtoggle1class") !== null &&
+                    DB.getItem("arrowtoggle1class").includes("arrow-open")) {
+                    $("#arrowtoggle1").toggleClass("arrow-open arrow-closed");
+                    $("#toggle-metrics").toggleClass("d-none");
+                }
+                if (DB.getItem("arrowtoggle2class") !== null &&
+                    DB.getItem("arrowtoggle2class").includes("arrow-open")) {
+                    $("#arrowtoggle2").toggleClass("arrow-open arrow-closed");
+                    $("#toggle-aggregatedMetrics").toggleClass("d-none");
+                }
+            }
+        }
 
     $("#showAdditionalMetrics").append(
         "<div><a id='additionalMetrics' class='collapse-table'>" +
