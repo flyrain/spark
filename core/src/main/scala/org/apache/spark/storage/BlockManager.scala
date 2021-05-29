@@ -654,6 +654,9 @@ private[spark] class BlockManager(
           // If this block manager receives a request for a block that it doesn't have then it's
           // likely that the master has outdated block statuses for this block. Therefore, we send
           // an RPC so that this block is marked as being unavailable from this block manager.
+          if (blockId.isBroadcast) {
+            logInfo(s"getLocalBlockData fails to get broadcast block $blockId")
+          }
           reportBlockStatus(blockId, BlockStatus.empty)
           throw new BlockNotFoundException(blockId.toString)
       }
@@ -805,11 +808,8 @@ private[spark] class BlockManager(
         case level =>
           val inMem = level.useMemory && memoryStore.contains(blockId)
           val onDisk = level.useDisk && diskStore.contains(blockId)
-          if (level.useMemory && !inMem) {
-            logInfo(s"block $blockId has useMemory level but can't find in memory store")
-          }
-          if (level.useDisk && !onDisk) {
-            logInfo(s"block $blockId has useDisk level but can't find in disk store")
+          if (!inMem && !onDisk) {
+            logInfo(s"block $blockId cannot be found in memory or on disk")
           }
           val deserialized = if (inMem) level.deserialized else false
           val replication = if (inMem  || onDisk) level.replication else 1
@@ -1904,6 +1904,11 @@ private[spark] class BlockManager(
     val removedFromDisk = diskStore.remove(blockId)
     if (!removedFromMemory && !removedFromDisk) {
       logWarning(s"Block $blockId could not be removed as it was not found on disk or in memory")
+    }
+
+    if (blockId.isBroadcast) {
+      logInfo(s"broadcast block $blockId was removed from (memory: $removedFromMemory, " +
+        s"disk: $removedFromDisk)")
     }
 
     blockInfoManager.removeBlock(blockId)
