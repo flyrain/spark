@@ -232,6 +232,18 @@ SPARK-35463     Redirect output for skipping checksum check
 SPARK-35226     Fix test added in SPARK-35226 for DB2KrbIntegrationSuite
 SPARK-35493     make `spark.blockManager.port` fallback for `spark.driver.blockManager.port` as same as other cluster managers
 SPARK-35171     Declare the markdown package as a dependency of the SparkR package
+SPARK-35584     Increase the timeout in FallbackStorageSuite
+SPARK-35576     Redact the sensitive info in the result of Set command
+SPARK-35573     Make SparkR tests pass with R 4.1+
+SPARK-35411     Handle Currying Product while serializing TreeNode to JSON
+SPARK-35566     Fix StateStoreRestoreExec output rows
+SPARK-35559     Speed up one test in AdaptiveQueryExecSuite
+SPARK-35454     One LogicalPlan can match multiple dataset ids
+SPARK-35514     Automatically update version index of DocSearch via release-tag.sh
+SPARK-35503     Change version the facetFilter of DocSearch from 3.1.1 to 3.1.2
+SPARK-35449     Only extract common expressions from CaseWhen values if elseValue is set
+SPARK-35287     Allow RemoveRedundantProjects to preserve ProjectExec which generates UnsafeRow for DataSourceV2ScanRelation
+SPARK-35495     Change SparkR maintainer for CRAN
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -299,3 +311,6 @@ rdar://78158423 Add OPTIMIZE command
 MINOR           Implement OrderAwareCoalesce
 MINOR           Remove unused dev file
 N/A             Updates Iceberg to 0.12.0-preview-8
+rdar://75851236 Add logging for monitoring broadcast block removal
+MINOR           bump kms version
+rdar://78422857 Fix stage page on Spark UI
