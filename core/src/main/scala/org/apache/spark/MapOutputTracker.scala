@@ -87,6 +87,11 @@ private class ShuffleStatus(numPartitions: Int) extends Logging {
   val mapStatuses = new Array[MapStatus](numPartitions)
 
   /**
+   * Keep the previous deleted MapStatus for recovery.
+   */
+  val mapStatusesDeleted = new Array[MapStatus](numPartitions)
+
+  /**
    * The cached result of serializing the map statuses array. This cache is lazily populated when
    * [[serializedMapStatus]] is called. The cache is invalidated when map outputs are removed.
    */
@@ -126,14 +131,25 @@ private class ShuffleStatus(numPartitions: Int) extends Logging {
    */
   def updateMapOutput(mapId: Long, bmAddress: BlockManagerId): Unit = withWriteLock {
     try {
-      val mapStatusOpt = mapStatuses.find(_.mapId == mapId)
+      val mapStatusOpt = mapStatuses.find(x => x != null && x.mapId == mapId)
       mapStatusOpt match {
         case Some(mapStatus) =>
           logInfo(s"Updating map output for ${mapId} to ${bmAddress}")
           mapStatus.updateLocation(bmAddress)
           invalidateSerializedMapOutputStatusCache()
         case None =>
-          logWarning(s"Asked to update map output ${mapId} for untracked map status.")
+          val index = mapStatusesDeleted.indexWhere(x => x != null && x.mapId == mapId)
+          if (index >= 0 && mapStatuses(index) == null) {
+            val mapStatus = mapStatusesDeleted(index)
+            mapStatus.updateLocation(bmAddress)
+            mapStatuses(index) = mapStatus
+            _numAvailableOutputs += 1
+            invalidateSerializedMapOutputStatusCache()
+            mapStatusesDeleted(index) = null
+            logInfo(s"Recover ${mapStatus.mapId} ${mapStatus.location}")
+          } else {
+            logWarning(s"Asked to update map output ${mapId} for untracked map status.")
+          }
       }
     } catch {
       case e: java.lang.NullPointerException =>
@@ -150,6 +166,7 @@ private class ShuffleStatus(numPartitions: Int) extends Logging {
     logDebug(s"Removing existing map output ${mapIndex} ${bmAddress}")
     if (mapStatuses(mapIndex) != null && mapStatuses(mapIndex).location == bmAddress) {
       _numAvailableOutputs -= 1
+      mapStatusesDeleted(mapIndex) = mapStatuses(mapIndex)
       mapStatuses(mapIndex) = null
       invalidateSerializedMapOutputStatusCache()
     }
@@ -182,6 +199,7 @@ private class ShuffleStatus(numPartitions: Int) extends Logging {
     for (mapIndex <- mapStatuses.indices) {
       if (mapStatuses(mapIndex) != null && f(mapStatuses(mapIndex).location)) {
         _numAvailableOutputs -= 1
+        mapStatusesDeleted(mapIndex) = mapStatuses(mapIndex)
         mapStatuses(mapIndex) = null
         invalidateSerializedMapOutputStatusCache()
       }
