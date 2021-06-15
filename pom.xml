@@ -2398,12 +2398,6 @@
         <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-kms-apple</artifactId>
         <version>${aciparquet.kms.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${scala.binary.version}</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.univocity</groupId>
