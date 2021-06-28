@@ -50,6 +50,7 @@ SPARK-35394     Move kubernetes-client.version to root pom file
 SPARK-34764     Propagate reason for exec loss to Web UI
 SPARK-35654     Allow ShuffleDataIO control DiskBlockManager.deleteFilesOnStop
 SPARK-35593     Support shuffle data recovery on the reused PVCs
+SPARK-35565     Add config for ignoring metadata directory of FileStreamSink
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -271,6 +272,18 @@ SPARK-35791     Release on-going map properly for NULL-aware ANTI join
 SPARK-35792     View should not capture configs used in `RelationConversions`
 SPARK-35796     Fix SparkSubmitSuite failure on MacOS 10.15+
 SPARK-35391     Fix memory leak in ExecutorAllocationListener
+SPARK-35700     Read char/varchar orc table with created and written by external systems
+SPARK-35799     Fix the allUpdatesTimeMs metric measuring in FlatMapGroupsWithStateExec
+SPARK-35700     Read schema from ORC files should strip CHAR/VARCHAR types
+SPARK-35695     Use AQE helper to simplify the code in CollectMetricsExec
+SPARK-35783     Set the list of read columns in the task configuration to reduce reading of ORC data
+SPARK-35841     Casting string to decimal type doesn't work if the sum of the digits is greater than 38
+SPARK-35885     Use keyserver.ubuntu.com as a keyserver for CRAN
+SPARK-35817     Restore performance of queries against wide Avro tables
+SPARK-35879     Fix performance regression caused by collectFetchRequests
+SPARK-35903     Parameterize 'master' in TPCDSQueryBenchmark
+SPARK-35909     Fix broken Python Links in docs/sql-getting-started.md
+SPARK-35886     PromotePrecision should not overwrite genCodePromotePrecision should not overwrite genCode
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
