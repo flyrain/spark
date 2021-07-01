@@ -846,7 +846,7 @@ package object config {
       .version("2.3.0")
       .intConf
       .checkValue(_ > 0, "The capacity of listener bus event queue must be positive")
-      .createWithDefault(10000)
+      .createWithDefault(1000000)
 
   private[spark] val LISTENER_BUS_METRICS_MAX_LISTENER_CLASSES_TIMED =
     ConfigBuilder("spark.scheduler.listenerbus.metrics.maxListenerClassesTimed")
