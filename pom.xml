@@ -195,7 +195,7 @@
     <htmlunit.version>2.40.0</htmlunit.version>
     <acispark.callhome.version>0.2.8</acispark.callhome.version>
     <aciparquet.kms.version>1.1.2-apple</aciparquet.kms.version>
-    <iceberg.version>0.12.0-apple-preview-8</iceberg.version>
+    <iceberg.version>0.12.0-apple-preview-9</iceberg.version>
     <!--
     Managed up from older version from Avro; sync with jackson-module-paranamer dependency version
     -->
