@@ -54,7 +54,44 @@ private[ui] class ExecutorsPage(
   extends WebUIPage("") {
 
   def executorList(): Seq[ExecutorSummary] = {
-    store.executorList(false)
+    store.executorList(false).map { summary =>
+      val escaped = summary.removeReason.map { r =>
+        // JSON doesn't allow multiline strings.
+        r.replaceAll("\n", "\\\\n")
+      }
+      new ExecutorSummary(
+        summary.id,
+        summary.hostPort,
+        summary.isActive,
+        summary.rddBlocks,
+        summary.memoryUsed,
+        summary.diskUsed,
+        summary.totalCores,
+        summary.maxTasks,
+        summary.activeTasks,
+        summary.failedTasks,
+        summary.completedTasks,
+        summary.totalTasks,
+        summary.totalDuration,
+        summary.totalGCTime,
+        summary.totalInputBytes,
+        summary.totalShuffleRead,
+        summary.totalShuffleWrite,
+        summary.isExcluded,
+        summary.maxMemory,
+        summary.addTime,
+        summary.removeTime,
+        escaped,
+        summary.executorLogs,
+        summary.memoryMetrics,
+        summary.blacklistedInStages,
+        summary.peakMemoryMetrics,
+        summary.attributes,
+        summary.resources,
+        summary.resourceProfileId,
+        summary.isExcluded,
+        summary.excludedInStages)
+    }
   }
 
   def render(request: HttpServletRequest): Seq[Node] = {
