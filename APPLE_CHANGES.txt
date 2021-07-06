@@ -284,6 +284,11 @@ SPARK-35879     Fix performance regression caused by collectFetchRequests
 SPARK-35903     Parameterize 'master' in TPCDSQueryBenchmark
 SPARK-35909     Fix broken Python Links in docs/sql-getting-started.md
 SPARK-35886     PromotePrecision should not overwrite genCodePromotePrecision should not overwrite genCode
+SPARK-35672     Pass user classpath entries to executors using config instead of command line
+SPARK-35898     Fix arrays and maps in RowToColumnConverter
+SPARK-35935     Prevent failure of MSCK REPAIR TABLE on table refreshing
+SPARK-35714     Use a shared stopping flag for WorkerWatcher to avoid the duplicate System.exit
+SPARK-35986     Fix type hint for RDD.histogram's buckets
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -357,4 +362,9 @@ rdar://75851236 Add logging for monitoring broadcast block removal
 MINOR           bump parquet-kms to 1.1.2 with provided dependencies
 rdar://79067466 Add awsappleconnect to Dockerfile
 MINOR           bump parquet-mr to 1.10.2.7-apple
+rdar://80089035 Missing "Active Task" column in individual executor info (executor page) in running Spark 3.1.1.x jobs
+rdar://80026960 Increase spark.scheduler.listenerbus.eventqueue.capacity to 1000000
+N/A             Add latest offsets to source progress
+rdar://80103675 Update Iceberg to 0.12.0-apple-preview-9 (#1125)
+rdar://79891939 JSON Parse error: Unterminated string in Executor tab of running job's Spark UI
 
