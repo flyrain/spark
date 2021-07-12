@@ -289,6 +289,8 @@ SPARK-35898     Fix arrays and maps in RowToColumnConverter
 SPARK-35935     Prevent failure of MSCK REPAIR TABLE on table refreshing
 SPARK-35714     Use a shared stopping flag for WorkerWatcher to avoid the duplicate System.exit
 SPARK-35986     Fix type hint for RDD.histogram's buckets
+SPARK-36020     Check logical link in remove redundant projects
+SPARK-36089     Update the SQL migration guide about encoding auto-detection of CSV files
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
