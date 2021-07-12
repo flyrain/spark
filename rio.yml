@@ -256,20 +256,6 @@ builds:
       steps:
         - build/sbt -Phadoop-3.2 "avro/test" -Pavro
 
-  - name: apple-spark-2.12_3.1.1-snapshot-kinesis
-    branchName: branch-3.1.1-apple
-    build:
-      template: freestyle:v4:build
-      steps:
-        - build/sbt -Phadoop-3.2 -Pkinesis-asl "streaming-kinesis-asl/test"
-
-  - name: apple-spark-2.12_3.1.1-snapshot-kinesis-pr
-    branchName: branch-3.1.1-apple
-    build:
-      template: freestyle:v4:prb
-      steps:
-        - build/sbt -Phadoop-3.2 -Pkinesis-asl "streaming-kinesis-asl/test"
-
   - name: apple-spark-2.12_3.1.1-snapshot-yarn-mesos-k8s
     branchName: branch-3.1.1-apple
     build:
