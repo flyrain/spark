@@ -183,7 +183,7 @@ trait WatermarkSupport extends UnaryExecNode {
 
   protected def removeKeysOlderThanWatermark(store: StateStore): Unit = {
     if (watermarkPredicateForKeys.nonEmpty) {
-      store.getRange(None, None).foreach { rowPair =>
+      store.iterator().foreach { rowPair =>
         if (watermarkPredicateForKeys.get.eval(rowPair.key)) {
           store.remove(rowPair.key)
         }
@@ -250,9 +250,9 @@ case class StateStoreRestoreExec(
       getStateInfo,
       keyExpressions.toStructType,
       stateManager.getStateValueSchema,
-      indexOrdinal = None,
-      sqlContext.sessionState,
-      Some(sqlContext.streams.stateStoreCoordinator)) { case (store, iter) =>
+      numColsPrefixKey = 0,
+      session.sessionState,
+      Some(session.streams.stateStoreCoordinator)) { case (store, iter) =>
         val hasInput = iter.hasNext
         if (!hasInput && keyExpressions.isEmpty) {
           // If our `keyExpressions` are empty, we're getting a global aggregation. In that case
@@ -309,9 +309,9 @@ case class StateStoreSaveExec(
       getStateInfo,
       keyExpressions.toStructType,
       stateManager.getStateValueSchema,
-      indexOrdinal = None,
-      sqlContext.sessionState,
-      Some(sqlContext.streams.stateStoreCoordinator)) { (store, iter) =>
+      numColsPrefixKey = 0,
+      session.sessionState,
+      Some(session.streams.stateStoreCoordinator)) { (store, iter) =>
         val numOutputRows = longMetric("numOutputRows")
         val numUpdatedStateRows = longMetric("numUpdatedStateRows")
         val allUpdatesTimeMs = longMetric("allUpdatesTimeMs")
@@ -459,9 +459,9 @@ case class StreamingDeduplicateExec(
       getStateInfo,
       keyExpressions.toStructType,
       child.output.toStructType,
-      indexOrdinal = None,
-      sqlContext.sessionState,
-      Some(sqlContext.streams.stateStoreCoordinator),
+      numColsPrefixKey = 0,
+      session.sessionState,
+      Some(session.streams.stateStoreCoordinator),
       // We won't check value row in state store since the value StreamingDeduplicateExec.EMPTY_ROW
       // is unrelated to the output schema.
       Map(StateStoreConf.FORMAT_VALIDATION_CHECK_VALUE_CONFIG -> "false")) { (store, iter) =>

@@ -52,9 +52,9 @@ case class StreamingGlobalLimitExec(
         getStateInfo,
         keySchema,
         valueSchema,
-        indexOrdinal = None,
-        sqlContext.sessionState,
-        Some(sqlContext.streams.stateStoreCoordinator)) { (store, iter) =>
+        numColsPrefixKey = 0,
+        session.sessionState,
+        Some(session.streams.stateStoreCoordinator)) { (store, iter) =>
       val key = UnsafeProjection.create(keySchema)(new GenericInternalRow(Array[Any](null)))
       val numOutputRows = longMetric("numOutputRows")
       val numUpdatedStateRows = longMetric("numUpdatedStateRows")

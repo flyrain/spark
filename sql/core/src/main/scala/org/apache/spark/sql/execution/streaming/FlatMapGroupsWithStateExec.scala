@@ -106,11 +106,12 @@ case class FlatMapGroupsWithStateExec(
       case _ =>
     }
 
+<<<<<<< HEAD
     child.execute().mapPartitionsWithStateStore[InternalRow](
       getStateInfo,
       groupingAttributes.toStructType,
       stateManager.stateSchema,
-      indexOrdinal = None,
+      numColsPrefixKey = 0,
       sqlContext.sessionState,
       Some(sqlContext.streams.stateStoreCoordinator)) { case (store, iter) =>
         val allUpdatesTimeMs = longMetric("allUpdatesTimeMs")
