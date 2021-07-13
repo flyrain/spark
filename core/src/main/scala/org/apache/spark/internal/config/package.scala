@@ -1457,7 +1457,7 @@ package object config {
         "read from the disk directly instead of being fetched as remote blocks over the network.")
       .version("3.0.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   private[spark] val STORAGE_LOCAL_DISK_BY_EXECUTORS_CACHE_SIZE =
     ConfigBuilder("spark.storage.localDiskByExecutors.cacheSize")
@@ -1468,7 +1468,7 @@ package object config {
         s"(when `${SHUFFLE_HOST_LOCAL_DISK_READING_ENABLED.key}` is set) from the same host.")
       .version("3.0.0")
       .intConf
-      .createWithDefault(1000)
+      .createWithDefault(0)
 
   private[spark] val MEMORY_MAP_LIMIT_FOR_TESTS =
     ConfigBuilder("spark.storage.memoryMapLimitForTests")
