@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.plans.FullOuter
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.LeftAnti
 import org.apache.spark.sql.catalyst.plans.RightOuter
-import org.apache.spark.sql.catalyst.plans.logical.{AppendData, DeleteAction, Filter, InsertAction, Join, JoinHint, LogicalPlan, MergeAction, MergeInto, MergeIntoParams, MergeIntoTable, Project, ReplaceData, UpdateAction}
+import org.apache.spark.sql.catalyst.plans.logical.{AppendData, DeleteAction, Filter, InsertAction, InsertStarAction, Join, JoinHint, LogicalPlan, MergeAction, MergeInto, MergeIntoParams, MergeIntoTable, Project, ReplaceData, UpdateAction, UpdateStarAction}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.write.MergeBuilder
@@ -183,10 +183,20 @@ object RewriteMergeInto
     clause match {
       case u: UpdateAction =>
         Some(u.assignments.map(_.value))
+      case _: UpdateStarAction =>
+        throw new RuntimeException(
+          """
+          |[BUG] encountered UpdateStarAction in RewriteMergeInto, this
+          |should have been rewritten by the Analyzer to be an UpdateAction""".stripMargin);
       case _: DeleteAction =>
         None
       case i: InsertAction =>
         Some(i.assignments.map(_.value))
+      case _: InsertStarAction =>
+        throw new RuntimeException(
+          """
+            |[BUG] encountered InsertStarAction in RewriteMergeInto, this
+            |should have been rewritten by the Analyzer to be an InsertAction""".stripMargin);
     }
   }
 
