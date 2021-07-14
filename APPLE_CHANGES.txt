@@ -51,6 +51,8 @@ SPARK-34764     Propagate reason for exec loss to Web UI
 SPARK-35654     Allow ShuffleDataIO control DiskBlockManager.deleteFilesOnStop
 SPARK-35593     Support shuffle data recovery on the reused PVCs
 SPARK-35565     Add config for ignoring metadata directory of FileStreamSink
+SPARK-34962     Explicit representation of * in UpdateAction and InsertAction in MergeIntoTable (#1113)
+SPARK-34609     Unify resolveExpressionBottomUp and resolveExpressionTopDown
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -369,4 +371,6 @@ rdar://80026960 Increase spark.scheduler.listenerbus.eventqueue.capacity to 1000
 N/A             Add latest offsets to source progress
 rdar://80103675 Update Iceberg to 0.12.0-apple-preview-9 (#1125)
 rdar://79891939 JSON Parse error: Unterminated string in Executor tab of running job's Spark UI
-
+rdar://80347753 Spark UI stage view broken
+rdar://80541032 Disable spark.shuffle.readHostLocalDisk by default
+MINOR           Remove duplicated pipelines
