@@ -19,6 +19,8 @@ package org.apache.spark.sql.hive.execution
 
 import org.scalatest.matchers.should.Matchers._
 
+import org.apache.spark.metrics.source.HiveCatalogMetrics
+import org.apache.spark.sql.{QueryTest, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.dsl.plans._
@@ -105,6 +107,21 @@ class PruneFileSourcePartitionsSuite extends PrunePartitionSuiteBase {
         val df = spark.table("tbl")
         val qe = df.join(broadcast(df), "p").queryExecution
         qe.sparkPlan.collect { case j: BroadcastHashJoinExec => j } should have size 1
+      }
+    }
+  }
+
+  test("SPARK-36128: spark.sql.hive.metastorePartitionPruning should work for file data sources") {
+    Seq(true, false).foreach { enablePruning =>
+      withTable("tbl") {
+        withSQLConf(SQLConf.HIVE_METASTORE_PARTITION_PRUNING.key -> enablePruning.toString) {
+          spark.range(10).selectExpr("id", "id % 3 as p").write.partitionBy("p").saveAsTable("tbl")
+          HiveCatalogMetrics.reset()
+          QueryTest.checkAnswer(sql("SELECT id FROM tbl WHERE p = 1"),
+            Seq(1, 4, 7).map(Row.apply(_)), checkToRDD = false) // avoid analyzing the query twice
+          val expectedCount = if (enablePruning) 1 else 3
+          assert(HiveCatalogMetrics.METRIC_PARTITIONS_FETCHED.getCount == expectedCount)
+        }
       }
     }
   }
