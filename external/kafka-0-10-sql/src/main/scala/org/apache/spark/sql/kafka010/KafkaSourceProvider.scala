@@ -314,10 +314,13 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
       }
     }
 
-    if (!params.contains(s"kafka.${ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG}")) {
-      throw new IllegalArgumentException(
-        s"Option 'kafka.${ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG}' must be specified for " +
-          s"configuring Kafka consumer")
+    val autoBootStrap = params.getOrElse(AUTO_CONFIG_BOOTSTRAP_SERVERS, "false").toBoolean
+    if (!autoBootStrap) {
+      if (!params.contains(s"kafka.${ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG}")) {
+        throw new IllegalArgumentException(
+          s"Option 'kafka.${ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG}' must be specified for " +
+            s"configuring Kafka consumer")
+      }
     }
   }
 
@@ -523,6 +526,8 @@ private[kafka010] object KafkaSourceProvider extends Logging {
   private[kafka010] val CONSUMER_POLL_TIMEOUT = "kafkaconsumer.polltimeoutms"
   private val GROUP_ID_PREFIX = "groupidprefix"
   private[kafka010] val INCLUDE_HEADERS = "includeheaders"
+  // If user-side library can auto-fill bootstrap server config at Kafka library.
+  private[kafka010] val AUTO_CONFIG_BOOTSTRAP_SERVERS = "autoConfigBootStrap"
 
   val TOPIC_OPTION_KEY = "topic"
 
