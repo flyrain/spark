@@ -20,6 +20,7 @@ package org.apache.spark.sql.errors
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.{Expression, GroupingID}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.internal.SQLConf
@@ -160,6 +161,9 @@ private[spark] object QueryCompilationErrors {
       s"Couldn't find the reference column for $after at $parentName")
   }
 
+  def multiTimeWindowExpressionsNotSupportedError(t: TreeNode[_]): Throwable = {
+    new AnalysisException("Multiple time/session window expressions would result in a cartesian " +
+      "product of rows, therefore they are currently not supported.", t.origin.line,
+      t.origin.startPosition)
+  }
 }
-
-
