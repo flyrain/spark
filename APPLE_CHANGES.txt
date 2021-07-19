@@ -53,6 +53,7 @@ SPARK-35593     Support shuffle data recovery on the reused PVCs
 SPARK-35565     Add config for ignoring metadata directory of FileStreamSink
 SPARK-34962     Explicit representation of * in UpdateAction and InsertAction in MergeIntoTable (#1113)
 SPARK-34609     Unify resolveExpressionBottomUp and resolveExpressionTopDown
+SPARK-36128     Apply spark.sql.hive.metastorePartitionPruning for non-Hive tables that uses Hive metastore for partition management
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -293,6 +294,21 @@ SPARK-35714     Use a shared stopping flag for WorkerWatcher to avoid the duplic
 SPARK-35986     Fix type hint for RDD.histogram's buckets
 SPARK-36020     Check logical link in remove redundant projects
 SPARK-36089     Update the SQL migration guide about encoding auto-detection of CSV files
+MINOR           EquivalentExpressions.commonChildrenToRecurse should skip CodegenFallback
+SPARK-36081     Update the document about the behavior change of trimming characters for cast
+SPARK-36076     ArrayIndexOutOfBounds in Cast string to times
+SPARK-36109     Check data after adding data to topic in KafkaSourceStressSuite
+SPARK-36129     Upgrade commons-compress to 1.21 to deal with CVEs
+SPARK-36154     Documenting week and quarter as valid formats in pyspark sql/functions trunc
+SPARK-36159     Replace 'python' to 'python3' in dev/test-dependencies.sh
+SPARK-36034     Rebase datetime in pushed down filters to parquet
+SPARK-35972     When replace ExtractValue in NestedColumnAliasing we should use semanticEquals
+SPARK-36160     Clarifying documentation for pyspark sql/column
+SPARK-36177     Disable CRAN in branches lower than the latest version uploaded
+SPARK-36195     Set MaxMetaspaceSize JVM option to 2g
+SPARK-36040     Add reference to kubernetes-client's version
+SPARK-36193     Recover SparkSubmit.runMain not to stop SparkContext in non-K8s env
+SPARK-36093     RemoveRedundantAliases should not change Command's parameter's expression's name
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -374,3 +390,6 @@ rdar://79891939 JSON Parse error: Unterminated string in Executor tab of running
 rdar://80347753 Spark UI stage view broken
 rdar://80541032 Disable spark.shuffle.readHostLocalDisk by default
 MINOR           Remove duplicated pipelines
+rdar://80115651 Make ExecutorPodsAllocator extendable
+rdar://80483071 Bump Hive version to 2.3.8.6-apple
+rdar://80650248 Provide option for users to skip bootstrap server option check
