@@ -309,6 +309,18 @@ SPARK-36195     Set MaxMetaspaceSize JVM option to 2g
 SPARK-36040     Add reference to kubernetes-client's version
 SPARK-36193     Recover SparkSubmit.runMain not to stop SparkContext in non-K8s env
 SPARK-36093     RemoveRedundantAliases should not change Command's parameter's expression's name
+SPARK-36216     Increase timeout for StreamingLinearRegressionWithTests. test_parameter_convergence
+SPARK-36079     Null-based filter estimate should always be in the range [0, 1]
+SPARK-36210     Preserve column insertion order in Dataset.withColumns
+SPARK-35027     Close the inputStream in FileAppender when writin…
+SPARK-36020     RemoveRedundantProjects should retain the LOGICAL_PLAN_TAG tag
+SPARK-28266     convertToLogicalRelation should not interpret `path` property when reading Hive tables
+SPARK-36213     Normalize PartitionSpec for Describe Table Command with PartitionSpec
+SPARK-36246     GHA WorkerDecommissionExtended flake
+SPARK-36209     Fix link to pyspark Dataframe documentation
+SPARK-36226     Improve python docstring links to other classes
+SPARK-36270     Change memory settings for enabling GA
+SPARK-36225     Use DataFrame in python docstrings
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
