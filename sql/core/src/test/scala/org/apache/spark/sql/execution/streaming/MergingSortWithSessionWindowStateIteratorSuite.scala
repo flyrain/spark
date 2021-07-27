@@ -24,7 +24,7 @@ import org.scalatest.BeforeAndAfter
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, UnsafeProjection, UnsafeRow}
-import org.apache.spark.sql.execution.streaming.state.{HDFSBackedStateStoreProvider, RocksDBStateStoreProvider, StateStore, StateStoreConf, StateStoreId, StateStoreProviderId, StreamingSessionWindowStateManager}
+import org.apache.spark.sql.execution.streaming.state.{HDFSBackedStateStoreProvider, StateStore, StateStoreConf, StateStoreId, StateStoreProviderId, StreamingSessionWindowStateManager}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.streaming.StreamTest
 import org.apache.spark.sql.types.{IntegerType, LongType, StringType, StructType}
@@ -53,8 +53,7 @@ class MergingSortWithSessionWindowStateIteratorSuite extends StreamTest with Bef
   }
 
   private val providerOptions = Seq(
-    classOf[HDFSBackedStateStoreProvider].getCanonicalName,
-    classOf[RocksDBStateStoreProvider].getCanonicalName).map { value =>
+    classOf[HDFSBackedStateStoreProvider].getCanonicalName).map { value =>
     (SQLConf.STATE_STORE_PROVIDER_CLASS.key, value.stripSuffix("$"))
   }
 

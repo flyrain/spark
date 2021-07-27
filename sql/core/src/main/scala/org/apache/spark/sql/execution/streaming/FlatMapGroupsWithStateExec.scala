@@ -106,7 +106,6 @@ case class FlatMapGroupsWithStateExec(
       case _ =>
     }
 
-<<<<<<< HEAD
     child.execute().mapPartitionsWithStateStore[InternalRow](
       getStateInfo,
       groupingAttributes.toStructType,

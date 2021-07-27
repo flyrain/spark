@@ -110,7 +110,7 @@ class DataFrameSessionWindowingSuite extends QueryTest with SharedSparkSession
 
     checkAnswer(
       df.groupBy(session_window($"time", "10 seconds"), 'id)
-        .agg(count("*").as("counts"), sum_distinct(col("value")).as("sum"))
+        .agg(count("*").as("counts"), sumDistinct(col("value")).as("sum"))
         .orderBy($"session_window.start".asc)
         .selectExpr("CAST(session_window.start AS STRING)", "CAST(session_window.end AS STRING)",
           "id", "counts", "sum"),
@@ -139,7 +139,7 @@ class DataFrameSessionWindowingSuite extends QueryTest with SharedSparkSession
 
     checkAnswer(
       df.groupBy(session_window($"time", "10 seconds"), 'id)
-        .agg(sum_distinct(col("value")).as("sum"), sum_distinct(col("value2")).as("sum2"))
+        .agg(sumDistinct(col("value")).as("sum"), sumDistinct(col("value2")).as("sum2"))
         .orderBy($"session_window.start".asc)
         .selectExpr("CAST(session_window.start AS STRING)", "CAST(session_window.end AS STRING)",
           "id", "sum", "sum2"),
@@ -244,7 +244,7 @@ class DataFrameSessionWindowingSuite extends QueryTest with SharedSparkSession
         .collect()
     }
     assert(e.getMessage.contains(
-      "Multiple time/session window expressions would result in a cartesian product"))
+      "Multiple time window expressions would result in a cartesian product"))
   }
 
   test("aliased session windows") {

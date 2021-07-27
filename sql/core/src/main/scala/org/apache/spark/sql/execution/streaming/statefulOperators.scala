@@ -509,9 +509,6 @@ case class SessionWindowStateStoreRestoreExec(
   override def requiredChildOrdering: Seq[Seq[SortOrder]] = {
     Seq((keyWithoutSessionExpressions ++ Seq(sessionExpression)).map(SortOrder(_, Ascending)))
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }
 
 /**
@@ -548,7 +545,6 @@ case class SessionWindowStateStoreSaveExec(
       Some(session.streams.stateStoreCoordinator)) { case (store, iter) =>
 
       val numOutputRows = longMetric("numOutputRows")
-      val numRemovedStateRows = longMetric("numRemovedStateRows")
       val allUpdatesTimeMs = longMetric("allUpdatesTimeMs")
       val allRemovalsTimeMs = longMetric("allRemovalsTimeMs")
       val commitTimeMs = longMetric("commitTimeMs")
@@ -587,7 +583,6 @@ case class SessionWindowStateStoreSaveExec(
                 finished = true
                 null
               } else {
-                numRemovedStateRows += 1
                 numOutputRows += 1
                 removedIter.next()
               }
@@ -597,7 +592,6 @@ case class SessionWindowStateStoreSaveExec(
               allRemovalsTimeMs += NANOSECONDS.toMillis(System.nanoTime - removalStartTimeNs)
               commitTimeMs += timeTakenMs { store.commit() }
               setStoreMetrics(store)
-              setOperatorMetrics()
             }
           }
 
@@ -630,18 +624,18 @@ case class SessionWindowStateStoreSaveExec(
                   val removedIter = stateManager.removeByValueCondition(
                     store, watermarkPredicateForData.get.eval)
                   while (removedIter.hasNext) {
-                    numRemovedStateRows += 1
                     removedIter.next()
                   }
                 }
               }
               commitTimeMs += timeTakenMs { store.commit() }
               setStoreMetrics(store)
-              setOperatorMetrics()
             }
           }
 
-        case _ => throw QueryExecutionErrors.invalidStreamingOutputModeError(outputMode)
+        case _ =>
+          throw new UnsupportedOperationException(
+            s"Invalid ouinvalidStreamingOutputModeErrortput mode: $outputMode")
       }
     }
   }
@@ -665,7 +659,6 @@ case class SessionWindowStateStoreSaveExec(
       store: StateStore,
       returnOnlyUpdatedRows: Boolean): Iterator[InternalRow] = {
     val numUpdatedStateRows = longMetric("numUpdatedStateRows")
-    val numRemovedStateRows = longMetric("numRemovedStateRows")
 
     new NextIterator[InternalRow] {
       var curKey: UnsafeRow = null
@@ -675,7 +668,6 @@ case class SessionWindowStateStoreSaveExec(
         if (curValuesOnKey.nonEmpty) {
           val (upserted, deleted) = stateManager.updateSessions(store, curKey, curValuesOnKey.toSeq)
           numUpdatedStateRows += upserted
-          numRemovedStateRows += deleted
           curValuesOnKey.clear
         }
       }
@@ -723,9 +715,6 @@ case class SessionWindowStateStoreSaveExec(
       iterPutToStore.next()
     }
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }
 
 

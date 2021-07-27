@@ -60,9 +60,6 @@ case class SessionWindow(timeColumn: Expression, gapDuration: Long) extends Unar
     }
     dataTypeCheck
   }
-
-  override protected def withNewChildInternal(newChild: Expression): Expression =
-    copy(timeColumn = newChild)
 }
 
 object SessionWindow {

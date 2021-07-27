@@ -52,8 +52,7 @@ class StreamingSessionWindowStateManagerSuite extends StreamTest with BeforeAndA
   }
 
   private val providerOptions = Seq(
-    classOf[HDFSBackedStateStoreProvider].getCanonicalName,
-    classOf[RocksDBStateStoreProvider].getCanonicalName).map { value =>
+    classOf[HDFSBackedStateStoreProvider].getCanonicalName).map { value =>
     (SQLConf.STATE_STORE_PROVIDER_CLASS.key, value.stripSuffix("$"))
   }
 

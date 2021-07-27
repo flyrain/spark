@@ -48,7 +48,6 @@ import org.apache.spark.util.Utils
 
 class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
   with BeforeAndAfter with PrivateMethodTester {
-  type MapType = mutable.HashMap[UnsafeRow, UnsafeRow]
   type ProviderMapType = java.util.concurrent.ConcurrentHashMap[UnsafeRow, UnsafeRow]
 
   import StateStoreCoordinatorSuite._
@@ -62,47 +61,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
   after {
     StateStore.stop()
     require(!StateStore.isMaintenanceRunning)
-  }
-
-  def updateVersionTo(
-      provider: StateStoreProvider,
-      currentVersion: Int,
-      targetVersion: Int): Int = {
-    var newCurrentVersion = currentVersion
-    for (i <- newCurrentVersion until targetVersion) {
-      newCurrentVersion = incrementVersion(provider, i)
-    }
-    require(newCurrentVersion === targetVersion)
-    newCurrentVersion
-  }
-
-  def incrementVersion(provider: StateStoreProvider, currentVersion: Int): Int = {
-    val store = provider.getStore(currentVersion)
-    put(store, "a", currentVersion + 1)
-    store.commit()
-    currentVersion + 1
-  }
-
-  def checkLoadedVersions(
-      loadedMaps: util.SortedMap[Long, ProviderMapType],
-      count: Int,
-      earliestKey: Long,
-      latestKey: Long): Unit = {
-    assert(loadedMaps.size() === count)
-    assert(loadedMaps.firstKey() === earliestKey)
-    assert(loadedMaps.lastKey() === latestKey)
-  }
-
-  def checkVersion(
-      loadedMaps: util.SortedMap[Long, ProviderMapType],
-      version: Long,
-      expectedData: Map[String, Int]): Unit = {
-
-    val originValueMap = loadedMaps.get(version).asScala.map { entry =>
-      rowToString(entry._1) -> rowToInt(entry._2)
-    }.toMap
-
-    assert(originValueMap === expectedData)
   }
 
   test("retaining only two latest versions when MAX_BATCHES_TO_RETAIN_IN_MEMORY set to 2") {
@@ -195,50 +153,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     assert(loadedMaps.size() === 0)
   }
 
-  test("snapshotting") {
-    val provider = newStoreProvider(opId = Random.nextInt, partition = 0, minDeltasForSnapshot = 5)
-
-    var currentVersion = 0
-
-    currentVersion = updateVersionTo(provider, currentVersion, 2)
-    require(getData(provider) === Set("a" -> 2))
-    provider.doMaintenance()               // should not generate snapshot files
-    assert(getData(provider) === Set("a" -> 2))
-
-    for (i <- 1 to currentVersion) {
-      assert(fileExists(provider, i, isSnapshot = false))  // all delta files present
-      assert(!fileExists(provider, i, isSnapshot = true))  // no snapshot files present
-    }
-
-    // After version 6, snapshotting should generate one snapshot file
-    currentVersion = updateVersionTo(provider, currentVersion, 6)
-    require(getData(provider) === Set("a" -> 6), "store not updated correctly")
-    provider.doMaintenance()       // should generate snapshot files
-
-    val snapshotVersion = (0 to 6).find(version => fileExists(provider, version, isSnapshot = true))
-    assert(snapshotVersion.nonEmpty, "snapshot file not generated")
-    deleteFilesEarlierThanVersion(provider, snapshotVersion.get)
-    assert(
-      getData(provider, snapshotVersion.get) === Set("a" -> snapshotVersion.get),
-      "snapshotting messed up the data of the snapshotted version")
-    assert(
-      getData(provider) === Set("a" -> 6),
-      "snapshotting messed up the data of the final version")
-
-    // After version 20, snapshotting should generate newer snapshot files
-    currentVersion = updateVersionTo(provider, currentVersion, 20)
-    require(getData(provider) === Set("a" -> 20), "store not updated correctly")
-    provider.doMaintenance()       // do snapshot
-
-    val latestSnapshotVersion = (0 to 20).filter(version =>
-      fileExists(provider, version, isSnapshot = true)).lastOption
-    assert(latestSnapshotVersion.nonEmpty, "no snapshot file found")
-    assert(latestSnapshotVersion.get > snapshotVersion.get, "newer snapshot not generated")
-
-    deleteFilesEarlierThanVersion(provider, latestSnapshotVersion.get)
-    assert(getData(provider) === Set("a" -> 20), "snapshotting messed up the data")
-  }
-
   test("cleaning") {
     val provider = newStoreProvider(opId = Random.nextInt, partition = 0, minDeltasForSnapshot = 5)
 
@@ -306,15 +220,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     }
   }
 
-  test("reports memory usage") {
-    val provider = newStoreProvider()
-    val store = provider.getStore(0)
-    val noDataMemoryUsed = store.metrics.memoryUsedBytes
-    put(store, "a", 1)
-    store.commit()
-    assert(store.metrics.memoryUsedBytes > noDataMemoryUsed)
-  }
-
   test("reports memory usage on current version") {
     def getSizeOfStateForCurrentVersion(metrics: StateStoreMetrics): Long = {
       val metricPair = metrics.customMetrics.find(_._1.name == "stateOnCurrentVersionSizeBytes")
@@ -329,58 +234,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     put(store, "a", 0, 1)
     store.commit()
     assert(getSizeOfStateForCurrentVersion(store.metrics) > noDataMemoryUsed)
-  }
-
-  test("StateStore.get") {
-    quietly {
-      val dir = newDir()
-      val storeId = StateStoreProviderId(StateStoreId(dir, 0, 0), UUID.randomUUID)
-      val storeConf = StateStoreConf.empty
-      val hadoopConf = new Configuration()
-
-      // Verify that trying to get incorrect versions throw errors
-      intercept[IllegalArgumentException] {
-        StateStore.get(
-          storeId, keySchema, valueSchema, None, -1, storeConf, hadoopConf)
-      }
-      assert(!StateStore.isLoaded(storeId)) // version -1 should not attempt to load the store
-
-      intercept[IllegalStateException] {
-        StateStore.get(
-          storeId, keySchema, valueSchema, None, 1, storeConf, hadoopConf)
-      }
-
-      // Increase version of the store and try to get again
-      val store0 = StateStore.get(
-        storeId, keySchema, valueSchema, None, 0, storeConf, hadoopConf)
-      assert(store0.version === 0)
-      put(store0, "a", 1)
-      store0.commit()
-
-      val store1 = StateStore.get(
-        storeId, keySchema, valueSchema, None, 1, storeConf, hadoopConf)
-      assert(StateStore.isLoaded(storeId))
-      assert(store1.version === 1)
-      assert(rowsToSet(store1.iterator()) === Set("a" -> 1))
-
-      // Verify that you can also load older version
-      val store0reloaded = StateStore.get(
-        storeId, keySchema, valueSchema, None, 0, storeConf, hadoopConf)
-      assert(store0reloaded.version === 0)
-      assert(rowsToSet(store0reloaded.iterator()) === Set.empty)
-
-      // Verify that you can remove the store and still reload and use it
-      StateStore.unload(storeId)
-      assert(!StateStore.isLoaded(storeId))
-
-      val store1reloaded = StateStore.get(
-        storeId, keySchema, valueSchema, None, 1, storeConf, hadoopConf)
-      assert(StateStore.isLoaded(storeId))
-      assert(store1reloaded.version === 1)
-      put(store1reloaded, "a", 2)
-      assert(store1reloaded.commit() === 2)
-      assert(rowsToSet(store1reloaded.iterator()) === Set("a" -> 2))
-    }
   }
 
   test("maintenance") {
@@ -405,11 +258,7 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
 
     def generateStoreVersions(): Unit = {
       for (i <- 1 to 20) {
-<<<<<<< HEAD
-        val store = StateStore.get(storeProviderId, keySchema, valueSchema, None,
-=======
-        val store = StateStore.get(storeProviderId1, keySchema, valueSchema, numColsPrefixKey = 0,
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
+        val store = StateStore.get(storeProviderId, keySchema, valueSchema, numColsPrefixKey = 0,
           latestStoreVersion, storeConf, hadoopConf)
         put(store, "a", 0, i)
         store.commit()
@@ -459,11 +308,7 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
           }
 
           // Reload the store and verify
-<<<<<<< HEAD
-          StateStore.get(storeProviderId, keySchema, valueSchema, indexOrdinal = None,
-=======
-          StateStore.get(storeProviderId1, keySchema, valueSchema, numColsPrefixKey = 0,
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
+          StateStore.get(storeProviderId, keySchema, valueSchema, numColsPrefixKey = 0,
             latestStoreVersion, storeConf, hadoopConf)
           assert(StateStore.isLoaded(storeProviderId))
 
@@ -474,24 +319,9 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
           }
 
           // Reload the store and verify
-<<<<<<< HEAD
-          StateStore.get(storeProviderId, keySchema, valueSchema, indexOrdinal = None,
+          StateStore.get(storeProviderId, keySchema, valueSchema, numColsPrefixKey = 0,
             latestStoreVersion, storeConf, hadoopConf)
           assert(StateStore.isLoaded(storeProviderId))
-=======
-          StateStore.get(storeProviderId1, keySchema, valueSchema, numColsPrefixKey = 0,
-            latestStoreVersion, storeConf, hadoopConf)
-          assert(StateStore.isLoaded(storeProviderId1))
-
-          // If some other executor loads the store, and when this executor loads other store,
-          // then this executor should unload inactive instances immediately.
-          coordinatorRef
-            .reportActiveInstance(storeProviderId1, "other-host", "other-exec", Seq.empty)
-          StateStore.get(storeProviderId2, keySchema, valueSchema, numColsPrefixKey = 0,
-            0, storeConf, hadoopConf)
-          assert(!StateStore.isLoaded(storeProviderId1))
-          assert(StateStore.isLoaded(storeProviderId2))
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
         }
       }
 
@@ -504,8 +334,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     }
   }
 
-<<<<<<< HEAD
-=======
   test("snapshotting") {
     val provider = newStoreProvider(minDeltasForSnapshot = 5, numOfVersToRetainInMemory = 2)
 
@@ -550,7 +378,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     assert(getLatestData(provider) === Set(("a", 0) -> 20), "snapshotting messed up the data")
   }
 
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
   testQuietly("SPARK-18342: commit fails when rename fails") {
     import RenameReturnsFalseFileSystem._
     val dir = scheme + "://" + newDir()
@@ -810,10 +637,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     newStoreProvider(storeId.operatorId, storeId.partitionId, dir = storeId.checkpointRootLocation)
   }
 
-<<<<<<< HEAD
-  override def getLatestData(storeProvider: HDFSBackedStateStoreProvider): Set[(String, Int)] = {
-    getData(storeProvider)
-=======
   override def newStoreProvider(
       minDeltasForSnapshot: Int,
       numOfVersToRetainInMemory: Int): HDFSBackedStateStoreProvider = {
@@ -824,17 +647,12 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
 
   override def getLatestData(
       storeProvider: HDFSBackedStateStoreProvider): Set[((String, Int), Int)] = {
-    getData(storeProvider, -1)
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
+    getData(storeProvider)
   }
 
   override def getData(
     provider: HDFSBackedStateStoreProvider,
-<<<<<<< HEAD
-    version: Int = -1): Set[(String, Int)] = {
-=======
-    version: Int): Set[((String, Int), Int)] = {
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
+    version: Int = -1): Set[((String, Int), Int)] = {
     val reloadedProvider = newStoreProvider(provider.stateStoreId)
     if (version < 0) {
       reloadedProvider.latestIterator().map(rowPairToDataPair).toSet
@@ -867,18 +685,6 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     provider
   }
 
-<<<<<<< HEAD
-  def fileExists(
-      provider: HDFSBackedStateStoreProvider,
-      version: Long,
-      isSnapshot: Boolean): Boolean = {
-    val method = PrivateMethod[Path](Symbol("baseDir"))
-    val basePath = provider invokePrivate method()
-    val fileName = if (isSnapshot) s"$version.snapshot" else s"$version.delta"
-    val filePath = new File(basePath.toString, fileName)
-    filePath.exists
-  }
-=======
   override def newStoreProvider(numPrefixCols: Int): HDFSBackedStateStoreProvider = {
     newStoreProvider(opId = Random.nextInt(), partition = 0, numColsPrefixKey = numPrefixCols)
   }
@@ -900,18 +706,8 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     val originValueMap = loadedMaps.get(version).iterator().map { entry =>
       keyRowToData(entry.key) -> valueRowToData(entry.value)
     }.toMap
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
 
-  def deleteFilesEarlierThanVersion(provider: HDFSBackedStateStoreProvider, version: Long): Unit = {
-    val method = PrivateMethod[Path](Symbol("baseDir"))
-    val basePath = provider invokePrivate method()
-    for (version <- 0 until version.toInt) {
-      for (isSnapshot <- Seq(false, true)) {
-        val fileName = if (isSnapshot) s"$version.snapshot" else s"$version.delta"
-        val filePath = new File(basePath.toString, fileName)
-        if (filePath.exists) filePath.delete()
-      }
-    }
+    assert(originValueMap === expectedData)
   }
 
   def corruptFile(
@@ -925,20 +721,28 @@ class StateStoreSuite extends StateStoreSuiteBase[HDFSBackedStateStoreProvider]
     filePath.delete()
     filePath.createNewFile()
   }
+
+  override def getDefaultSQLConf(
+      minDeltasForSnapshot: Int,
+      numOfVersToRetainInMemory: Int): SQLConf = {
+    val sqlConf = new SQLConf()
+    sqlConf.setConf(SQLConf.STATE_STORE_MIN_DELTAS_FOR_SNAPSHOT, minDeltasForSnapshot)
+    sqlConf.setConf(SQLConf.MAX_BATCHES_TO_RETAIN_IN_MEMORY, numOfVersToRetainInMemory)
+    sqlConf.setConf(SQLConf.MIN_BATCHES_TO_RETAIN, 2)
+    sqlConf.setConf(SQLConf.STATE_STORE_COMPRESSION_CODEC, SQLConf.get.stateStoreCompressionCodec)
+    sqlConf
+  }
 }
 
 abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
-  extends StateStoreCodecsTest {
+  extends StateStoreCodecsTest with PrivateMethodTester {
   import StateStoreTestsHelper._
 
-<<<<<<< HEAD
-=======
   type MapType = mutable.HashMap[UnsafeRow, UnsafeRow]
 
   protected val keySchema: StructType = StateStoreTestsHelper.keySchema
   protected val valueSchema: StructType = StateStoreTestsHelper.valueSchema
 
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
   testWithAllCodec("get, put, remove, commit, and all data iterator") {
     val provider = newStoreProvider()
 
@@ -1142,8 +946,6 @@ abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
     assert(rowPairsToDataSet(finalStore.iterator()) === Set((key1, key2) -> 2))
   }
 
-<<<<<<< HEAD
-=======
   test("StateStore.get") {
     quietly {
       val dir = newDir()
@@ -1205,7 +1007,6 @@ abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
     assert(store.metrics.memoryUsedBytes > noDataMemoryUsed)
   }
 
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
   test("SPARK-34270: StateStoreMetrics.combine should not override individual metrics") {
     val customSumMetric = StateStoreCustomSumMetric("metric1", "custom metric 1")
     val customSizeMetric = StateStoreCustomSizeMetric("metric2", "custom metric 2")
@@ -1247,15 +1048,12 @@ abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
   /** Return a new provider with the given id */
   def newStoreProvider(storeId: StateStoreId): ProviderClass
 
-<<<<<<< HEAD
-=======
   /** Return a new provider with minimum delta and version to retain in memory */
   def newStoreProvider(minDeltasForSnapshot: Int, numOfVersToRetainInMemory: Int): ProviderClass
 
   /** Return a new provider with setting prefix key */
   def newStoreProvider(numPrefixCols: Int): ProviderClass
 
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
   /** Get the latest data referred to by the given provider but not using this provider */
   def getLatestData(storeProvider: ProviderClass): Set[((String, Int), Int)]
 
@@ -1272,8 +1070,6 @@ abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
       }
     }
   }
-<<<<<<< HEAD
-=======
 
   /** Get the `SQLConf` by the given minimum delta and version to retain in memory */
   def getDefaultSQLConf(minDeltasForSnapshot: Int, numOfVersToRetainInMemory: Int): SQLConf
@@ -1322,7 +1118,6 @@ abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
       }
     }
   }
->>>>>>> 094300fa60 ([SPARK-35861][SS] Introduce "prefix match scan" feature on state store)
 }
 
 object StateStoreTestsHelper {
