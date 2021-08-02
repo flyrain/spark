@@ -57,6 +57,14 @@ SPARK-35565     Add config for ignoring metadata directory of FileStreamSink
 SPARK-34962     Explicit representation of * in UpdateAction and InsertAction in MergeIntoTable (#1113)
 SPARK-34609     Unify resolveExpressionBottomUp and resolveExpressionTopDown
 SPARK-36128     Apply spark.sql.hive.metastorePartitionPruning for non-Hive tables that uses Hive metastore for partition management
+SPARK-34888     Introduce UpdatingSessionIterator adjusting session window on elements
+SPARK-34889     Introduce MergingSessionsIterator merging elements directly which belong to the same session
+SPARK-35861     Introduce "prefix match scan" feature on state store
+SPARK-34891     Introduce state store manager for session window in streaming query
+SPARK-34892     Introduce MergingSortWithSessionWindowStateIterator sorting input rows and rows in state efficiently
+SPARK-34893     Support session window natively
+SPARK-36172     Document session window into Structured Streaming guide doc
+SPARK-34720     MERGE ... UPDATE/INSERT * should do by-name resolution
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -324,6 +332,10 @@ SPARK-36209     Fix link to pyspark Dataframe documentation
 SPARK-36226     Improve python docstring links to other classes
 SPARK-36270     Change memory settings for enabling GA
 SPARK-36225     Use DataFrame in python docstrings
+SPARK-36269     Fix only set data columns to Hive column names config
+SPARK-36211     Correct typing of udf return value
+SPARK-36242     Ensure spill file closed before set success
+SPARK-36272     Change shuffled hash join metrics test to check relative value of build size
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -408,3 +420,5 @@ MINOR           Remove duplicated pipelines
 rdar://80115651 Make ExecutorPodsAllocator extendable
 rdar://80483071 Bump Hive version to 2.3.8.6-apple
 rdar://80650248 Provide option for users to skip bootstrap server option check
+rdar://81168472 Backport SPARK-10816 EventTime based sessionization (session window).
+rdar://81168472 Backport SPARK-10816 EventTime based sessionization (session window). Fix test error.
