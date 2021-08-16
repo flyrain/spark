@@ -166,4 +166,9 @@ private[spark] object QueryCompilationErrors {
       "product of rows, therefore they are currently not supported.", t.origin.line,
       t.origin.startPosition)
   }
+
+  def sessionWindowGapDurationDataTypeError(dt: DataType): Throwable = {
+    new AnalysisException("Gap duration expression used in session window must be " +
+      s"CalendarIntervalType, but got ${dt}")
+  }
 }
