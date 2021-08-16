@@ -195,7 +195,7 @@
     <htmlunit.version>2.40.0</htmlunit.version>
     <acispark.callhome.version>0.2.8</acispark.callhome.version>
     <aciparquet.kms.version>1.1.2-apple</aciparquet.kms.version>
-    <iceberg.version>0.12.0-apple-preview-9</iceberg.version>
+    <adt.version>1.0.0-preview-3</adt.version>
     <!--
     Managed up from older version from Avro; sync with jackson-module-paranamer dependency version
     -->
@@ -2422,9 +2422,10 @@
         <version>${commons-cli.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.iceberg</groupId>
-        <artifactId>iceberg-spark3-runtime</artifactId>
-        <version>${iceberg.version}</version>
+        <groupId>com.apple.aci.datatables</groupId>
+        <artifactId>adt-spark3</artifactId>
+        <version>${adt.version}</version>
+        <type>pom</type>
       </dependency>
     </dependencies>
   </dependencyManagement>

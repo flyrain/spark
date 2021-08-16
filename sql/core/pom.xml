@@ -118,8 +118,9 @@
       <artifactId>xbean-asm7-shaded</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-spark3-runtime</artifactId>
+      <groupId>com.apple.aci.datatables</groupId>
+      <artifactId>adt-spark3</artifactId>
+      <type>pom</type>
     </dependency>
     <dependency>
       <groupId>org.scalacheck</groupId>
