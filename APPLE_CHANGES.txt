@@ -351,6 +351,13 @@ SPARK-36489     Aggregate functions over no grouping keys, on tables with a sing
 SPARK-36353     RemoveNoopOperators should keep output schema
 SPARK-36500     Fix temp_shuffle file leaking when a task is interrupted
 SPARK-36052     Introducing a limit for pending PODs
+SPARK-36379     Null at root level of a JSON array should not fail w/ permissive mode
+SPARK-36400     Make ThriftServer recognize spark.sql.redaction.string.regex
+SPARK-35011     Avoid Block Manager registrations when StopExecutor msg is in-flight
+SPARK-36532     Fix deadlock in CoarseGrainedExecutorBackend.onDisconnected to avoid executorsconnected to avoid executor shutdown hang shutdown hang
+MINOR           Update doc for streaming deduplication
+N/A             Update Spark key negotiation protocol
+N/A             Updates AuthEngine to pass the correct SecretKeySpec format
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -438,3 +445,5 @@ rdar://80650248 Provide option for users to skip bootstrap server option check
 rdar://81168472 Backport SPARK-10816 EventTime based sessionization (session window).
 rdar://81168472 Backport SPARK-10816 EventTime based sessionization (session window). Fix test error.
 rdar://81285966 Replace iceberg with adt-bundle in spark-sql
+rdar://82197087 Upgrade to Hadoop 3.2.0.6-apple for built-in gzip compressor
+rdar://82095645 (Update the Callhome Version at Apple Spark Build) add jwt token on client side and send more fields to server for analytic and ML purpose
