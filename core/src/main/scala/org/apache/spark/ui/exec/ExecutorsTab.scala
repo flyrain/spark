@@ -57,7 +57,7 @@ private[ui] class ExecutorsPage(
     store.executorList(false).map { summary =>
       val escaped = summary.removeReason.map { r =>
         // JSON doesn't allow multiline strings.
-        r.replaceAll("\n", "\\\\n")
+        r.replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t")
       }
       new ExecutorSummary(
         summary.id,
