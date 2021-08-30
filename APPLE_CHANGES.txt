@@ -358,6 +358,14 @@ SPARK-36532     Fix deadlock in CoarseGrainedExecutorBackend.onDisconnected to a
 MINOR           Update doc for streaming deduplication
 N/A             Update Spark key negotiation protocol
 N/A             Updates AuthEngine to pass the correct SecretKeySpec format
+SPARK-33933     Materialize BroadcastQueryStage first to try to avoid broadcast timeout in AQE
+SPARK-35876     ArraysZip should retain field names to avoid being re-written by analyzer/optimizer
+SPARK-36564     Fix NullPointerException in LiveRDDDistribution.toApi
+SPARK-36352     Spark should check result plan's output schema name
+SPARK-36398     Redact sensitive information in Spark Thrift Server log
+SPARK-36509     Fix the issue that executors are never re-scheduled
+SPARK-36603     Use WeakReference not SoftReference in LevelDB
+SPARK-36614     Correct executor loss reason caused by decommission in UI
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
@@ -447,3 +455,7 @@ rdar://81168472 Backport SPARK-10816 EventTime based sessionization (session win
 rdar://81285966 Replace iceberg with adt-bundle in spark-sql
 rdar://82197087 Upgrade to Hadoop 3.2.0.6-apple for built-in gzip compressor
 rdar://82095645 (Update the Callhome Version at Apple Spark Build) add jwt token on client side and send more fields to server for analytic and ML purpose
+MINOR           Upgrade ADT to 1.0.0-preview-4
+rdar://82265181 Executors detail page js error for running job (Spark 3.1.1.26)
+MINOR           Revert "rdar://82454870: Add an option to Apple Hadoop to ignore trailer check in BuiltInDecompressor
+rdar://82197087 Upgrade to Hadoop 3.2.0.6-apple for built-in gzip compressor
