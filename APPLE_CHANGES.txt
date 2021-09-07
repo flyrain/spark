@@ -67,6 +67,7 @@ SPARK-34893     Support session window natively
 SPARK-36172     Document session window into Structured Streaming guide doc
 SPARK-34720     MERGE ... UPDATE/INSERT * should do by-name resolution
 SPARK-36068     No tests in hadoop-cloud run unless hadoop-3.2 profile is activated explicitly
+SPARK-35880     Track the duplicates dropped count in dedupe operator
 
 # From Spark 3.1.2
 MINOR           Add table_identifier in sql-migration-guide for SHOW CREATE TABLE
@@ -365,6 +366,8 @@ SPARK-36398     Redact sensitive information in Spark Thrift Server log
 SPARK-36509     Fix the issue that executors are never re-scheduled
 SPARK-36603     Use WeakReference not SoftReference in LevelDB
 SPARK-36614     Correct executor loss reason caused by decommission in UI
+SPARK-36617     Fix type hints for `approxQuantile` to support multi-column version
+SPARK-36639     Fix an issue that sequence builtin function causes ArrayIndexOutOfBoundsException if the arguments are under the condition of start == stop && step < 0
 
 # Internal Patches
 SPARK-17767     Support user-provided ExternalCatalog and SessionBuilder
