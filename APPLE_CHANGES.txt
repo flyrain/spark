@@ -463,3 +463,4 @@ MINOR           Upgrade ADT to 1.0.0-preview-4
 rdar://82265181 Executors detail page js error for running job (Spark 3.1.1.26)
 N/A             Revert "rdar://82197087: Upgrade to Hadoop 3.2.0.6-apple for built-in gzip compressor"
 rdar://82454870 Add an option to Apple Hadoop to ignore trailer check in BuiltInDecompressor
+MINOR           Bump Parquet version to 1.10.2.8-apple
